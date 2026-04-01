@@ -1,0 +1,13 @@
+project:
+  type: website
+  output-dir: docs
+
+filters:
+  - shinylive
+
+website:
+  title: "Factor Library"
+
+format:
+  html:
+    theme: cosmo
