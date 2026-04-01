@@ -9,63 +9,167 @@ This app provides access to the factor library described in *Uncertainty Everywh
 ```{shinylive-r}
 #| standalone: true
 #| viewerHeight: 1200px
-library(duckplyr)
-library(ggplot2)
-library(scales)
-library(tibble)
+library(poorman)
+library(nanoparquet)
 
-sv_info <- tibble::tribble(
-  ~sorting_variable , ~full_name                                , ~direction         ,
-  "52w"             , "52-Week High"                            , "top_minus_bottom" ,
-  "aci"             , "Abnormal Corporate Investment"           , "bottom_minus_top" ,
-  "ag"              , "Asset Growth"                            , "bottom_minus_top" ,
-  "ami"             , "Amihud Illiquidity"                      , "top_minus_bottom" ,
-  "beta"            , "Beta"                                    , "top_minus_bottom" ,
-  "bm"              , "Book-to-Market"                          , "top_minus_bottom" ,
-  "cbop"            , "Cash-Based Operating Profitability"      , "top_minus_bottom" ,
-  "cdi"             , "Composite Debt Issuance"                 , "bottom_minus_top" ,
-  "cfm"             , "Cash Flow to Market"                     , "top_minus_bottom" ,
-  "csi"             , "Composite Share Issuance"                , "bottom_minus_top" ,
-  "dbe"             , "Change in Common Equity"                 , "bottom_minus_top" ,
-  "dcol"            , "Change in Current Operating Liabilities" , "bottom_minus_top" ,
-  "dfnl"            , "Change in Financial Liabilities"         , "bottom_minus_top" ,
-  "dinv"            , "Inventory Changes"                       , "bottom_minus_top" ,
-  "dm"              , "Debt to Market"                          , "top_minus_bottom" ,
-  "dnoa"            , "Change in Net Operating Assets"          , "bottom_minus_top" ,
-  "dpia"            , "Change in PPE and Intangibles"           , "bottom_minus_top" ,
-  "dtv"             , "Dollar Trading Volume"                   , "bottom_minus_top" ,
-  "dwc"             , "Change in Working Capital"               , "bottom_minus_top" ,
-  "ebm"             , "Enterprise Book to Market"               , "top_minus_bottom" ,
-  "em"              , "Earnings to Market"                      , "top_minus_bottom" ,
-  "gpa"             , "Gross Profits to Assets"                 , "top_minus_bottom" ,
-  "hr"              , "Hiring Rate"                             , "bottom_minus_top" ,
-  "ig"              , "Investment Growth"                       , "bottom_minus_top" ,
-  "iskew"           , "Idiosyncratic Skewness"                  , "bottom_minus_top" ,
-  "ivol"            , "Idiosyncratic Volatility"                , "bottom_minus_top" ,
-  "mdr"             , "Maximum Daily Return"                    , "bottom_minus_top" ,
-  "me"              , "Market Equity"                           , "bottom_minus_top" ,
-  "mom"             , "Momentum"                                , "top_minus_bottom" ,
-  "ndf"             , "Net Debt Financing"                      , "bottom_minus_top" ,
-  "ndm"             , "Net Debt to Market"                      , "bottom_minus_top" ,
-  "nef"             , "Net Equity Financing"                    , "bottom_minus_top" ,
-  "noa"             , "Net Operating Assets"                    , "bottom_minus_top" ,
-  "npy"             , "Net Payout Yield"                        , "top_minus_bottom" ,
-  "nxf"             , "Net External Financing"                  , "bottom_minus_top" ,
-  "o"               , "O-Score"                                 , "bottom_minus_top" ,
-  "oa"              , "Operating Accruals"                      , "bottom_minus_top" ,
-  "ocm"             , "Operating Cash Flow to Market"           , "top_minus_bottom" ,
-  "ol"              , "Operating Leverage"                      , "top_minus_bottom" ,
-  "ope"             , "Operating Efficiency"                    , "top_minus_bottom" ,
-  "rer"             , "Real-Estate Ratio"                       , "top_minus_bottom" ,
-  "rev"             , "Long-Term Reversal"                      , "bottom_minus_top" ,
-  "rmom"            , "Residual Momentum"                       , "top_minus_bottom" ,
-  "roa"             , "Return on Assets"                        , "top_minus_bottom" ,
-  "roe"             , "Return on Equity"                        , "top_minus_bottom" ,
-  "rs"              , "Relative Strength"                       , "top_minus_bottom" ,
-  "sm"              , "Sales to Market"                         , "top_minus_bottom" ,
-  "sue"             , "Standardized Unexpected Earnings"        , "top_minus_bottom" ,
-  "tbi"             , "Taxable Income to Book Income"           , "bottom_minus_top" ,
-  "tur"             , "Share Turnover"                          , "bottom_minus_top"
+sv_info <- data.frame(
+  sorting_variable = c(
+    "52w",
+    "aci",
+    "ag",
+    "ami",
+    "beta",
+    "bm",
+    "cbop",
+    "cdi",
+    "cfm",
+    "csi",
+    "dbe",
+    "dcol",
+    "dfnl",
+    "dinv",
+    "dm",
+    "dnoa",
+    "dpia",
+    "dtv",
+    "dwc",
+    "ebm",
+    "em",
+    "gpa",
+    "hr",
+    "ig",
+    "iskew",
+    "ivol",
+    "mdr",
+    "me",
+    "mom",
+    "ndf",
+    "ndm",
+    "nef",
+    "noa",
+    "npy",
+    "nxf",
+    "o",
+    "oa",
+    "ocm",
+    "ol",
+    "ope",
+    "rer",
+    "rev",
+    "rmom",
+    "roa",
+    "roe",
+    "rs",
+    "sm",
+    "sue",
+    "tbi",
+    "tur"
+  ),
+  full_name = c(
+    "52-Week High",
+    "Abnormal Corporate Investment",
+    "Asset Growth",
+    "Amihud Illiquidity",
+    "Beta",
+    "Book-to-Market",
+    "Cash-Based Operating Profitability",
+    "Composite Debt Issuance",
+    "Cash Flow to Market",
+    "Composite Share Issuance",
+    "Change in Common Equity",
+    "Change in Current Operating Liabilities",
+    "Change in Financial Liabilities",
+    "Inventory Changes",
+    "Debt to Market",
+    "Change in Net Operating Assets",
+    "Change in PPE and Intangibles",
+    "Dollar Trading Volume",
+    "Change in Working Capital",
+    "Enterprise Book to Market",
+    "Earnings to Market",
+    "Gross Profits to Assets",
+    "Hiring Rate",
+    "Investment Growth",
+    "Idiosyncratic Skewness",
+    "Idiosyncratic Volatility",
+    "Maximum Daily Return",
+    "Market Equity",
+    "Momentum",
+    "Net Debt Financing",
+    "Net Debt to Market",
+    "Net Equity Financing",
+    "Net Operating Assets",
+    "Net Payout Yield",
+    "Net External Financing",
+    "O-Score",
+    "Operating Accruals",
+    "Operating Cash Flow to Market",
+    "Operating Leverage",
+    "Operating Efficiency",
+    "Real-Estate Ratio",
+    "Long-Term Reversal",
+    "Residual Momentum",
+    "Return on Assets",
+    "Return on Equity",
+    "Relative Strength",
+    "Sales to Market",
+    "Standardized Unexpected Earnings",
+    "Taxable Income to Book Income",
+    "Share Turnover"
+  ),
+  direction = c(
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "top_minus_bottom",
+    "bottom_minus_top",
+    "bottom_minus_top"
+  ),
+  stringsAsFactors = FALSE
 )
 
 sv_choices <- setNames(
@@ -90,13 +194,13 @@ grid_url <- paste0(
 )
 grid_path <- download_cached(grid_url, "grid.parquet")
 
-grid <- read_parquet_duckdb(grid_path) |> collect()
+grid <- read_parquet(grid_path)
 
 tf_colors <- c("#3B9AB2FF", "#78B7C5FF", "#EBCC2AFF", "#E1AF00FF", "#F21A00FF")
-tf_primary <- tf_colors[1] # teal
-tf_secondary <- tf_colors[5] # red
-tf_accent <- tf_colors[3] # yellow
-tf_muted <- tf_colors[2] # light blue
+tf_primary <- tf_colors[1]
+tf_secondary <- tf_colors[5]
+tf_accent <- tf_colors[3]
+tf_muted <- tf_colors[2]
 
 
 ui <- fluidPage(
@@ -221,7 +325,7 @@ server <- function(input, output, session) {
   output$sv_detail <- renderUI({
     req(input$sorting_variable)
     sv_key <- sub("^sv_", "", input$sorting_variable)
-    info <- sv_info |> filter(sorting_variable == sv_key)
+    info <- sv_info %>% filter(sorting_variable == sv_key)
     req(nrow(info) > 0)
 
     direction_label <- if (info$direction == "top_minus_bottom") {
@@ -246,7 +350,7 @@ server <- function(input, output, session) {
   })
 
   matched_id <- reactive({
-    grid |>
+    res <- grid %>%
       filter(
         sorting_variable == input$sorting_variable,
         sorting_variable_lag == input$sorting_variable_lag,
@@ -259,15 +363,15 @@ server <- function(input, output, session) {
         exclude_financials == input$exclude_financials,
         exclude_utilities == input$exclude_utilities,
         exclude_negative_earnings == input$exclude_negative_earnings
-      ) |>
-      filter(
-        if (input$sorting_method != "univariate") {
-          breakpoints_secondary == as.numeric(input$breakpoints_secondary)
-        } else {
-          TRUE
-        }
-      ) |>
-      head(1) |>
+      )
+
+    if (input$sorting_method != "univariate") {
+      res <- res %>%
+        filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
+    }
+
+    res %>%
+      head(1) %>%
       pull(id)
   })
 
@@ -288,10 +392,10 @@ server <- function(input, output, session) {
 
     withProgress(message = "Fetching data...", {
       path <- download_cached(url, cache_file)
-      read_parquet_duckdb(path) |>
-        filter(id == target_id) |>
-        arrange(date, ret_type) |>
-        collect()
+      dat <- read_parquet(path)
+      dat %>%
+        filter(id == target_id) %>%
+        arrange(date, ret_type)
     })
   })
 
@@ -342,52 +446,67 @@ server <- function(input, output, session) {
 
   sv_full_name <- reactive({
     sv_key <- sub("^sv_", "", input$sorting_variable)
-    info <- sv_info |> filter(sorting_variable == sv_key)
+    info <- sv_info %>% filter(sorting_variable == sv_key)
     if (nrow(info) > 0) info$full_name else sv_key
   })
 
   output$plot <- renderPlot({
     req(nrow(factor_data()) > 0)
-    factor_data() |>
-      mutate(date = as.Date(date)) |>
-      group_by(ret_type) |>
-      arrange(date) |>
-      mutate(cumret = cumprod(1 + ret) - 1) |>
-      ggplot(aes(x = date, y = cumret, color = ret_type)) +
-      geom_line(linewidth = 0.8) +
-      scale_color_manual(
-        values = c("ew" = tf_primary, "vw" = tf_secondary),
-        labels = c("ew" = "Equal-weighted", "vw" = "Value-weighted")
-      ) +
-      scale_y_continuous(labels = percent) +
-      scale_x_date(date_breaks = "5 years", date_labels = "%Y") +
-      labs(
-        title = sprintf("Cumulative HML returns: %s", sv_full_name()),
-        x = NULL,
-        y = "Cumulative return",
-        color = NULL
-      ) +
-      theme_minimal(base_size = 14) +
-      theme(
-        legend.position = "bottom",
-        plot.title = element_text(color = tf_primary, face = "bold"),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1)
-      )
+
+    dat <- factor_data()
+    dat$date <- as.Date(dat$date)
+
+    dat <- dat %>%
+      group_by(ret_type) %>%
+      arrange(date) %>%
+      mutate(cumret = cumprod(1 + ret) - 1) %>%
+      ungroup()
+
+    ew <- dat[dat$ret_type == "ew", ]
+    vw <- dat[dat$ret_type == "vw", ]
+
+    ylim <- range(dat$cumret, na.rm = TRUE)
+    xlim <- range(dat$date, na.rm = TRUE)
+
+    plot(
+      ew$date,
+      ew$cumret,
+      type = "l",
+      lwd = 2,
+      col = tf_primary,
+      xlim = xlim,
+      ylim = ylim,
+      main = sprintf("Cumulative HML returns: %s", sv_full_name()),
+      xlab = "",
+      ylab = "Cumulative return",
+      yaxt = "n"
+    )
+    lines(vw$date, vw$cumret, lwd = 2, col = tf_secondary)
+
+    at <- axTicks(2)
+    axis(2, at = at, labels = sprintf("%.0f%%", at * 100))
+
+    legend(
+      "topleft",
+      legend = c("Equal-weighted", "Value-weighted"),
+      col = c(tf_primary, tf_secondary),
+      lwd = 2,
+      bty = "n"
+    )
   })
 
   output$summary_table <- renderTable(
     {
       req(nrow(factor_data()) > 0)
-      factor_data() |>
+      factor_data() %>%
         mutate(
           Weighting = ifelse(
             ret_type == "ew",
             "Equal-weighted",
             "Value-weighted"
           )
-        ) |>
-        group_by(Weighting) |>
+        ) %>%
+        group_by(Weighting) %>%
         summarise(
           `Start date` = as.character(min(date)),
           `End date` = as.character(max(date)),
@@ -412,10 +531,9 @@ server <- function(input, output, session) {
 
   output$download_parquet <- downloadHandler(
     filename = function() sprintf("factor_id_%s.parquet", matched_id()),
-    content = function(file) duckplyr_df_to_parquet(factor_data(), file)
+    content = function(file) write_parquet(factor_data(), file)
   )
 }
-
 
 shinyApp(ui, server)
 ```
