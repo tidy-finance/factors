@@ -115,6 +115,7 @@ ul.task-list li input[type="checkbox"] {
 #| viewerHeight: 1200px
 library(poorman)
 library(nanoparquet)
+library(base64enc)
 
 sv_info &lt;- data.frame(
   sorting_variable = c(
@@ -309,8 +310,9 @@ tf_muted &lt;- tf_colors[2]
 
 ui &lt;- fluidPage(
   shiny::useBusyIndicators(),
-  tags$head(tags$style(HTML(sprintf(
-    "
+  tags$head(
+    tags$style(HTML(sprintf(
+      "
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
     h2 { color: %s; }
     .sidebar { background-color: #f8f9fa; }
@@ -320,15 +322,28 @@ ui &lt;- fluidPage(
     a:hover { color: %s; }
     hr { border-top: 2px solid %s; }
   ",
-    tf_primary,
-    tf_primary,
-    tf_primary,
-    tf_secondary,
-    tf_secondary,
-    tf_primary,
-    tf_secondary,
-    tf_muted
-  )))),
+      tf_primary,
+      tf_primary,
+      tf_primary,
+      tf_secondary,
+      tf_secondary,
+      tf_primary,
+      tf_secondary,
+      tf_muted
+    ))),
+    tags$script(HTML(
+      "
+  Shiny.addCustomMessageHandler('download_file', function(msg) {
+    var a = document.createElement('a');
+    a.href = 'data:' + msg.type + ';base64,' + msg.data;
+    a.download = msg.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+"
+    ))
+  ),
 
   sidebarLayout(
     sidebarPanel(
@@ -402,8 +417,8 @@ ui &lt;- fluidPage(
         "Exclude negative earnings",
         FALSE
       ),
-      downloadButton("download_csv", "Download CSV"),
-      downloadButton("download_parquet", "Download Parquet")
+      actionButton("download_csv", "Download CSV"),
+      actionButton("download_parquet", "Download Parquet")
     ),
 
     mainPanel(
@@ -628,15 +643,37 @@ server &lt;- function(input, output, session) {
     bordered = TRUE
   )
 
-  output$download_csv &lt;- downloadHandler(
-    filename = function() sprintf("factor_id_%s.csv", matched_id()),
-    content = function(file) write.csv(factor_data(), file, row.names = FALSE)
-  )
+  observeEvent(input$download_csv, {
+    req(nrow(factor_data()) &gt; 0)
+    tmp &lt;- tempfile(fileext = ".csv")
+    write.csv(factor_data(), tmp, row.names = FALSE)
+    b64 &lt;- base64enc::base64encode(tmp)
+    fname &lt;- sprintf("factor_id_%s.csv", matched_id())
+    session$sendCustomMessage(
+      "download_file",
+      list(
+        data = b64,
+        filename = fname,
+        type = "text/csv"
+      )
+    )
+  })
 
-  output$download_parquet &lt;- downloadHandler(
-    filename = function() sprintf("factor_id_%s.parquet", matched_id()),
-    content = function(file) write_parquet(factor_data(), file)
-  )
+  observeEvent(input$download_parquet, {
+    req(nrow(factor_data()) &gt; 0)
+    tmp &lt;- tempfile(fileext = ".parquet")
+    write_parquet(factor_data(), tmp)
+    b64 &lt;- base64enc::base64encode(tmp)
+    fname &lt;- sprintf("factor_id_%s.parquet", matched_id())
+    session$sendCustomMessage(
+      "download_file",
+      list(
+        data = b64,
+        filename = fname,
+        type = "application/octet-stream"
+      )
+    )
+  })
 }
 
 shinyApp(ui, server)</code></pre>
