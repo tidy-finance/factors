@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.25">
+<meta name="generator" content="quarto-1.8.23">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -40,14 +40,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-1fe81d0376b2c50856e68e651e390326.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-0514632cc3f7a6d071f65f884e64e3e1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-09d066f7c8c75433ca26c43dab7c8893.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
-<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/load-shinylive-sw.js" type="module"></script>
-<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/run-python-blocks.js" type="module"></script>
-<link href="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/shinylive.css" rel="stylesheet">
+<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/run-python-blocks.js" type="module"></script>
+<link href="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/shinylive.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
@@ -469,7 +469,7 @@ ui &lt;- fluidPage(
       radioButtons(
         "breakpoints_main",
         "Breakpoints",
-        c("Five" = 5, "Ten" = 10),
+        c("Three" = 3, "Five" = 5, "Ten" = 10),
         selected = 10
       ),
       radioButtons(
@@ -498,9 +498,19 @@ ui &lt;- fluidPage(
         selected = "NYSE"
       ),
       radioButtons(
+        "breakpoints_min_size",
+        "Breakpoints min. size",
+        c("None" = "NA", "Smallest 20%" = "0.2"),
+        selected = "NA"
+      ),
+      radioButtons(
         "weighting_scheme",
         "Weighting",
-        c("Equal-weighted" = "EW", "Value-weighted" = "VW"),
+        c(
+          "Equal-weighted" = "EW",
+          "Value-weighted" = "VW",
+          "Capped VW" = "capped VW"
+        ),
         selected = "VW"
       ),
       radioButtons(
@@ -583,6 +593,13 @@ server &lt;- function(input, output, session) {
         exclude_negative_earnings == input$exclude_negative_earnings
       )
 
+    if (input$breakpoints_min_size == "NA") {
+      res &lt;- res %&gt;% filter(is.na(breakpoints_min_size))
+    } else {
+      res &lt;- res %&gt;%
+        filter(breakpoints_min_size == as.numeric(input$breakpoints_min_size))
+    }
+
     if (input$sorting_method != "univariate") {
       res &lt;- res %&gt;%
         filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
@@ -598,12 +615,16 @@ server &lt;- function(input, output, session) {
 
     sv &lt;- sub("^sv_", "", input$sorting_variable)
     lag &lt;- input$sorting_variable_lag
-    cache_file &lt;- paste0(sv, "_", lag, ".parquet")
+    method &lt;- input$sorting_method
+    bp_main &lt;- input$breakpoints_main
+    cache_file &lt;- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url &lt;- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/breakpoints_main=%s/part-0.parquet",
       sv,
-      lag
+      lag,
+      method,
+      bp_main
     )
 
     target_id &lt;- matched_id()
@@ -628,6 +649,14 @@ server &lt;- function(input, output, session) {
       sprintf('sorting_method = "%s"', input$sorting_method),
       sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
       sprintf('weighting_scheme = "%s"', input$weighting_scheme),
+      sprintf(
+        'breakpoints_min_size = %s',
+        ifelse(
+          input$breakpoints_min_size == "NA",
+          "NULL",
+          input$breakpoints_min_size
+        )
+      ),
       sprintf('exclude_size = %s', input$exclude_size),
       sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
       sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
@@ -656,9 +685,7 @@ server &lt;- function(input, output, session) {
 
     tags$pre(
       style = "white-space: pre; display: block; ...",
-      tags$code(
-        code
-      )
+      code
     )
   })
 
@@ -674,43 +701,27 @@ server &lt;- function(input, output, session) {
     dat &lt;- factor_data()
     dat$date &lt;- as.Date(dat$date)
 
+    selected_type &lt;- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[input$weighting_scheme]]
+
     dat &lt;- dat %&gt;%
-      group_by(ret_type) %&gt;%
+      filter(ret_type == selected_type) %&gt;%
       arrange(date) %&gt;%
-      mutate(cumret = cumprod(1 + ret) - 1) %&gt;%
-      ungroup()
-
-    ew &lt;- dat[dat$ret_type == "ew", ]
-    vw &lt;- dat[dat$ret_type == "vw", ]
-
-    ylim &lt;- range(dat$cumret, na.rm = TRUE)
-    xlim &lt;- range(dat$date, na.rm = TRUE)
+      mutate(cumret = cumprod(1 + ret) - 1)
 
     plot(
-      ew$date,
-      ew$cumret,
+      dat$date,
+      dat$cumret,
       type = "l",
       lwd = 2,
       col = tf_primary,
-      xlim = xlim,
-      ylim = ylim,
       main = sprintf("Cumulative HML returns: %s", sv_full_name()),
       xlab = "",
       ylab = "Cumulative return",
       yaxt = "n"
     )
-    lines(vw$date, vw$cumret, lwd = 2, col = tf_secondary)
 
     at &lt;- axTicks(2)
     axis(2, at = at, labels = sprintf("%.0f%%", at * 100))
-
-    legend(
-      "topleft",
-      legend = c("Equal-weighted", "Value-weighted"),
-      col = c(tf_primary, tf_secondary),
-      lwd = 2,
-      bty = "n"
-    )
   })
 
   output$summary_table &lt;- renderTable(
@@ -782,10 +793,15 @@ shinyApp(ui, server)</code></pre>
 
 </main> <!-- /main -->
 <div class="custom-footer">
+
   <div class="copyright">© Christoph Frey, Christoph Scheuch, Stefan Voigt &amp; Patrick Weiss</div>
+
   <a href="https://www.tidy-finance.org/disclaimer.html">Disclaimer</a>
+
   <a href="#" id="open_preferences_center">Cookie Preferences</a>
+
 </div>
+
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
