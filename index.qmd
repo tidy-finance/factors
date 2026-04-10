@@ -266,7 +266,7 @@ ui <- fluidPage(
       radioButtons(
         "breakpoints_main",
         "Breakpoints",
-        c("Five" = 5, "Ten" = 10),
+        c("Three" = 3, "Five" = 5, "Ten" = 10),
         selected = 10
       ),
       radioButtons(
@@ -295,9 +295,19 @@ ui <- fluidPage(
         selected = "NYSE"
       ),
       radioButtons(
+        "breakpoints_min_size",
+        "Breakpoints min. size",
+        c("None" = "NA", "Smallest 20%" = "0.2"),
+        selected = "NA"
+      ),
+      radioButtons(
         "weighting_scheme",
         "Weighting",
-        c("Equal-weighted" = "EW", "Value-weighted" = "VW"),
+        c(
+          "Equal-weighted" = "EW",
+          "Value-weighted" = "VW",
+          "Capped VW" = "capped VW"
+        ),
         selected = "VW"
       ),
       radioButtons(
@@ -380,6 +390,13 @@ server <- function(input, output, session) {
         exclude_negative_earnings == input$exclude_negative_earnings
       )
 
+    if (input$breakpoints_min_size == "NA") {
+      res <- res %>% filter(is.na(breakpoints_min_size))
+    } else {
+      res <- res %>%
+        filter(breakpoints_min_size == as.numeric(input$breakpoints_min_size))
+    }
+
     if (input$sorting_method != "univariate") {
       res <- res %>%
         filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
@@ -395,12 +412,16 @@ server <- function(input, output, session) {
 
     sv <- sub("^sv_", "", input$sorting_variable)
     lag <- input$sorting_variable_lag
-    cache_file <- paste0(sv, "_", lag, ".parquet")
+    method <- input$sorting_method
+    bp_main <- input$breakpoints_main
+    cache_file <- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url <- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/breakpoints_main=%s/part-0.parquet",
       sv,
-      lag
+      lag,
+      method,
+      bp_main
     )
 
     target_id <- matched_id()
@@ -425,6 +446,14 @@ server <- function(input, output, session) {
       sprintf('sorting_method = "%s"', input$sorting_method),
       sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
       sprintf('weighting_scheme = "%s"', input$weighting_scheme),
+      sprintf(
+        'breakpoints_min_size = %s',
+        ifelse(
+          input$breakpoints_min_size == "NA",
+          "NULL",
+          input$breakpoints_min_size
+        )
+      ),
       sprintf('exclude_size = %s', input$exclude_size),
       sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
       sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
@@ -453,9 +482,7 @@ server <- function(input, output, session) {
 
     tags$pre(
       style = "white-space: pre; display: block; ...",
-      tags$code(
-        code
-      )
+      code
     )
   })
 
@@ -471,43 +498,27 @@ server <- function(input, output, session) {
     dat <- factor_data()
     dat$date <- as.Date(dat$date)
 
+    selected_type <- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[input$weighting_scheme]]
+
     dat <- dat %>%
-      group_by(ret_type) %>%
+      filter(ret_type == selected_type) %>%
       arrange(date) %>%
-      mutate(cumret = cumprod(1 + ret) - 1) %>%
-      ungroup()
-
-    ew <- dat[dat$ret_type == "ew", ]
-    vw <- dat[dat$ret_type == "vw", ]
-
-    ylim <- range(dat$cumret, na.rm = TRUE)
-    xlim <- range(dat$date, na.rm = TRUE)
+      mutate(cumret = cumprod(1 + ret) - 1)
 
     plot(
-      ew$date,
-      ew$cumret,
+      dat$date,
+      dat$cumret,
       type = "l",
       lwd = 2,
       col = tf_primary,
-      xlim = xlim,
-      ylim = ylim,
       main = sprintf("Cumulative HML returns: %s", sv_full_name()),
       xlab = "",
       ylab = "Cumulative return",
       yaxt = "n"
     )
-    lines(vw$date, vw$cumret, lwd = 2, col = tf_secondary)
 
     at <- axTicks(2)
     axis(2, at = at, labels = sprintf("%.0f%%", at * 100))
-
-    legend(
-      "topleft",
-      legend = c("Equal-weighted", "Value-weighted"),
-      col = c(tf_primary, tf_secondary),
-      lwd = 2,
-      bty = "n"
-    )
   })
 
   output$summary_table <- renderTable(
@@ -515,11 +526,11 @@ server <- function(input, output, session) {
       req(nrow(factor_data()) > 0)
       factor_data() %>%
         mutate(
-          Weighting = ifelse(
-            ret_type == "ew",
-            "Equal-weighted",
-            "Value-weighted"
-          )
+          Weighting = c(
+            ew = "Equal-weighted",
+            vw = "Value-weighted",
+            vw_capped = "Capped VW"
+          )[ret_type]
         ) %>%
         group_by(Weighting) %>%
         summarise(
