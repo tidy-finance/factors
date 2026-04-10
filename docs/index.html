@@ -207,11 +207,12 @@ cookieconsent.run({
 
 <p>This app provides access to the factor library described in <em>Uncertainty Everywhere</em> (Gruber, Kastner, Voigt, and Weiss, 2024). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from <a href="https://huggingface.co/datasets/tidy-finance/factor-library">HuggingFace</a> and cached in your browser for the session.</p>
 <div class="column-screen-inset">
+<div style="max-width: 1600px; margin: 0 auto;">
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
 #| standalone: true
-#| viewerHeight: 1200px
+#| viewerHeight: 1000px
 library(poorman)
 library(nanoparquet)
 library(base64enc)
@@ -412,14 +413,31 @@ ui &lt;- fluidPage(
   tags$head(
     tags$style(HTML(sprintf(
       "
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding-top: 20px;}
     h2 { color: %s; }
     .sidebar { background-color: #f8f9fa; }
     .btn-default { background-color: %s; color: white; border-color: %s; }
     .btn-default:hover { background-color: %s; color: white; border-color: %s; }
     a { color: %s; }
     a:hover { color: %s; }
-    hr { border-top: 2px solid %s; }
+    hr.section-divider {
+      border: 0;
+      border-top: 2px solid %s;
+      margin: 15px 0 12px 0;
+    }
+    .section-label {
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: %s;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .sidebar .form-group { margin-bottom: 12px; }
+    .sidebar .radio { margin-top: 3px; margin-bottom: 3px; }
+    .sidebar label { font-weight: 600; font-size: 0.9em; }
+    .action-row .btn { width: 100%%; }
   ",
       tf_primary,
       tf_primary,
@@ -428,7 +446,8 @@ ui &lt;- fluidPage(
       tf_secondary,
       tf_primary,
       tf_secondary,
-      tf_muted
+      tf_muted,
+      tf_primary
     ))),
     tags$script(HTML(
       "
@@ -446,6 +465,10 @@ ui &lt;- fluidPage(
 
   sidebarLayout(
     sidebarPanel(
+      width = 4,
+
+      # ---- Section 1: Variable selection (full width) ----
+      tags$span(class = "section-label", "Factor"),
       selectizeInput(
         "sorting_variable",
         "Sorting variable",
@@ -454,83 +477,130 @@ ui &lt;- fluidPage(
         options = list(placeholder = "Type to search...")
       ),
       uiOutput("sv_detail"),
-      radioButtons(
-        "sorting_variable_lag",
-        "Lag",
-        c("3 months" = "3m", "6 months" = "6m", "Fama-French style" = "ff"),
-        selected = "3m"
-      ),
-      radioButtons(
-        "rebalancing",
-        "Rebalancing",
-        c("Monthly" = "monthly", "Annual" = "annual"),
-        selected = "annual"
-      ),
-      radioButtons(
-        "breakpoints_main",
-        "Breakpoints",
-        c("Three" = 3, "Five" = 5, "Ten" = 10),
-        selected = 10
-      ),
-      radioButtons(
-        "sorting_method",
-        "Sorting method",
-        c(
-          "Univariate" = "univariate",
-          "Bivariate (dependent)" = "bivariate-dependent",
-          "Bivariate (independent)" = "bivariate-independent"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 2: Sorting configuration (two columns) ----
+      tags$span(class = "section-label", "Sorting configuration"),
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "sorting_variable_lag",
+            "Lag",
+            c("3 months" = "3m", "6 months" = "6m", "Fama-French" = "ff"),
+            selected = "3m"
+          ),
+          radioButtons(
+            "breakpoints_main",
+            "Breakpoints",
+            c("Three" = 3, "Five" = 5, "Ten" = 10),
+            selected = 10
+          ),
+          radioButtons(
+            "breakpoints_exchanges",
+            "Exchanges",
+            c("NYSE only" = "NYSE", "All" = "AMEX|NASDAQ|NYSE"),
+            selected = "NYSE"
+          )
         ),
-        selected = "bivariate-dependent"
-      ),
-      conditionalPanel(
-        "input.sorting_method != 'univariate'",
-        radioButtons(
-          "breakpoints_secondary",
-          "Secondary breakpoints",
-          c("Two" = 2, "Five" = 5),
-          selected = 2
+        column(
+          6,
+          radioButtons(
+            "rebalancing",
+            "Rebalancing",
+            c("Monthly" = "monthly", "Annual" = "annual"),
+            selected = "annual"
+          ),
+          radioButtons(
+            "sorting_method",
+            "Sorting method",
+            c(
+              "Univariate" = "univariate",
+              "Bivariate (dep.)" = "bivariate-dependent",
+              "Bivariate (indep.)" = "bivariate-independent"
+            ),
+            selected = "bivariate-dependent"
+          ),
+          conditionalPanel(
+            "input.sorting_method != 'univariate'",
+            radioButtons(
+              "breakpoints_secondary",
+              "Secondary bp.",
+              c("Two" = 2, "Five" = 5),
+              selected = 2
+            )
+          )
         )
       ),
-      radioButtons(
-        "breakpoints_exchanges",
-        "Exchanges",
-        c("NYSE only" = "NYSE", "All exchanges" = "AMEX|NASDAQ|NYSE"),
-        selected = "NYSE"
-      ),
-      radioButtons(
-        "breakpoints_min_size",
-        "Breakpoints min. size",
-        c("None" = "NA", "Smallest 20%" = "0.2"),
-        selected = "NA"
-      ),
-      radioButtons(
-        "weighting_scheme",
-        "Weighting",
-        c(
-          "Equal-weighted" = "EW",
-          "Value-weighted" = "VW",
-          "Capped VW" = "capped VW"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 3: Weighting &amp; size (two columns) ----
+      tags$span(class = "section-label", "Weighting &amp; size"),
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "weighting_scheme",
+            "Weighting",
+            c(
+              "Equal-weighted" = "EW",
+              "Value-weighted" = "VW",
+              "Capped VW" = "capped VW"
+            ),
+            selected = "VW"
+          )
         ),
-        selected = "VW"
+        column(
+          6,
+          radioButtons(
+            "breakpoints_min_size",
+            "Breakpoints min. size",
+            c("None" = "NA", "Smallest 20%" = "0.2"),
+            selected = "NA"
+          ),
+          radioButtons(
+            "exclude_size",
+            "Exclude small firms?",
+            c("No" = 0, "Smallest 20%" = 0.2),
+            selected = 0.2
+          )
+        )
       ),
-      radioButtons(
-        "exclude_size",
-        "Exclude small firms?",
-        c("No" = 0, "Smallest 20%" = 0.2),
-        selected = 0.2
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 4: Exclusion filters (two columns) ----
+      tags$span(class = "section-label", "Exclusion filters"),
+      fluidRow(
+        column(
+          6,
+          checkboxInput("exclude_financials", "Exclude financials", FALSE),
+          checkboxInput("exclude_utilities", "Exclude utilities", FALSE)
+        ),
+        column(
+          6,
+          checkboxInput(
+            "exclude_negative_earnings",
+            "Exclude negative earnings",
+            FALSE
+          )
+        )
       ),
-      checkboxInput("exclude_financials", "Exclude financials", FALSE),
-      checkboxInput("exclude_utilities", "Exclude utilities", FALSE),
-      checkboxInput(
-        "exclude_negative_earnings",
-        "Exclude negative earnings",
-        FALSE
-      ),
-      actionButton("download_csv", "Download CSV"),
-      actionButton("download_parquet", "Download Parquet")
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 5: Actions (two columns) ----
+      fluidRow(
+        class = "action-row",
+        column(6, actionButton("download_csv", "Download CSV")),
+        column(6, actionButton("download_parquet", "Download Parquet"))
+      )
     ),
 
     mainPanel(
+      width = 8,
       plotOutput("plot"),
       tableOutput("summary_table"),
       h4("Download via R"),
@@ -701,7 +771,9 @@ server &lt;- function(input, output, session) {
     dat &lt;- factor_data()
     dat$date &lt;- as.Date(dat$date)
 
-    selected_type &lt;- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[input$weighting_scheme]]
+    selected_type &lt;- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[
+      input$weighting_scheme
+    ]]
 
     dat &lt;- dat %&gt;%
       filter(ret_type == selected_type) %&gt;%
@@ -787,6 +859,7 @@ server &lt;- function(input, output, session) {
 }
 
 shinyApp(ui, server)</code></pre>
+</div>
 </div>
 
 
