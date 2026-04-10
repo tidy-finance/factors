@@ -5,10 +5,10 @@ title: "Factor Libary"
 This app provides access to the factor library described in *Uncertainty Everywhere* (Gruber, Kastner, Voigt, and Weiss, 2024). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from [HuggingFace](https://huggingface.co/datasets/tidy-finance/factor-library) and cached in your browser for the session.
 
 :::{.column-screen-inset}
-
+::: {style="max-width: 1600px; margin: 0 auto;"}
 ```{shinylive-r}
 #| standalone: true
-#| viewerHeight: 1200px
+#| viewerHeight: 1000px
 library(poorman)
 library(nanoparquet)
 library(base64enc)
@@ -209,14 +209,31 @@ ui <- fluidPage(
   tags$head(
     tags$style(HTML(sprintf(
       "
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding-top: 20px;}
     h2 { color: %s; }
     .sidebar { background-color: #f8f9fa; }
     .btn-default { background-color: %s; color: white; border-color: %s; }
     .btn-default:hover { background-color: %s; color: white; border-color: %s; }
     a { color: %s; }
     a:hover { color: %s; }
-    hr { border-top: 2px solid %s; }
+    hr.section-divider {
+      border: 0;
+      border-top: 2px solid %s;
+      margin: 15px 0 12px 0;
+    }
+    .section-label {
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: %s;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .sidebar .form-group { margin-bottom: 12px; }
+    .sidebar .radio { margin-top: 3px; margin-bottom: 3px; }
+    .sidebar label { font-weight: 600; font-size: 0.9em; }
+    .action-row .btn { width: 100%%; }
   ",
       tf_primary,
       tf_primary,
@@ -225,7 +242,8 @@ ui <- fluidPage(
       tf_secondary,
       tf_primary,
       tf_secondary,
-      tf_muted
+      tf_muted,
+      tf_primary
     ))),
     tags$script(HTML(
       "
@@ -243,6 +261,10 @@ ui <- fluidPage(
 
   sidebarLayout(
     sidebarPanel(
+      width = 4,
+
+      # ---- Section 1: Variable selection (full width) ----
+      tags$span(class = "section-label", "Factor"),
       selectizeInput(
         "sorting_variable",
         "Sorting variable",
@@ -251,73 +273,130 @@ ui <- fluidPage(
         options = list(placeholder = "Type to search...")
       ),
       uiOutput("sv_detail"),
-      radioButtons(
-        "sorting_variable_lag",
-        "Lag",
-        c("3 months" = "3m", "6 months" = "6m", "Fama-French style" = "ff"),
-        selected = "3m"
-      ),
-      radioButtons(
-        "rebalancing",
-        "Rebalancing",
-        c("Monthly" = "monthly", "Annual" = "annual"),
-        selected = "annual"
-      ),
-      radioButtons(
-        "breakpoints_main",
-        "Breakpoints",
-        c("Five" = 5, "Ten" = 10),
-        selected = 10
-      ),
-      radioButtons(
-        "sorting_method",
-        "Sorting method",
-        c(
-          "Univariate" = "univariate",
-          "Bivariate (dependent)" = "bivariate-dependent",
-          "Bivariate (independent)" = "bivariate-independent"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 2: Sorting configuration (two columns) ----
+      tags$span(class = "section-label", "Sorting configuration"),
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "sorting_variable_lag",
+            "Lag",
+            c("3 months" = "3m", "6 months" = "6m", "Fama-French" = "ff"),
+            selected = "3m"
+          ),
+          radioButtons(
+            "breakpoints_main",
+            "Breakpoints",
+            c("Three" = 3, "Five" = 5, "Ten" = 10),
+            selected = 10
+          ),
+          radioButtons(
+            "breakpoints_exchanges",
+            "Exchanges",
+            c("NYSE only" = "NYSE", "All" = "AMEX|NASDAQ|NYSE"),
+            selected = "NYSE"
+          )
         ),
-        selected = "bivariate-dependent"
-      ),
-      conditionalPanel(
-        "input.sorting_method != 'univariate'",
-        radioButtons(
-          "breakpoints_secondary",
-          "Secondary breakpoints",
-          c("Two" = 2, "Five" = 5),
-          selected = 2
+        column(
+          6,
+          radioButtons(
+            "rebalancing",
+            "Rebalancing",
+            c("Monthly" = "monthly", "Annual" = "annual"),
+            selected = "annual"
+          ),
+          radioButtons(
+            "sorting_method",
+            "Sorting method",
+            c(
+              "Univariate" = "univariate",
+              "Bivariate (dep.)" = "bivariate-dependent",
+              "Bivariate (indep.)" = "bivariate-independent"
+            ),
+            selected = "bivariate-dependent"
+          ),
+          conditionalPanel(
+            "input.sorting_method != 'univariate'",
+            radioButtons(
+              "breakpoints_secondary",
+              "Secondary bp.",
+              c("Two" = 2, "Five" = 5),
+              selected = 2
+            )
+          )
         )
       ),
-      radioButtons(
-        "breakpoints_exchanges",
-        "Exchanges",
-        c("NYSE only" = "NYSE", "All exchanges" = "AMEX|NASDAQ|NYSE"),
-        selected = "NYSE"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 3: Weighting & size (two columns) ----
+      tags$span(class = "section-label", "Weighting & size"),
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "weighting_scheme",
+            "Weighting",
+            c(
+              "Equal-weighted" = "EW",
+              "Value-weighted" = "VW",
+              "Capped VW" = "capped VW"
+            ),
+            selected = "VW"
+          )
+        ),
+        column(
+          6,
+          radioButtons(
+            "breakpoints_min_size",
+            "Breakpoints min. size",
+            c("None" = "NA", "Smallest 20%" = "0.2"),
+            selected = "NA"
+          ),
+          radioButtons(
+            "exclude_size",
+            "Exclude small firms?",
+            c("No" = 0, "Smallest 20%" = 0.2),
+            selected = 0.2
+          )
+        )
       ),
-      radioButtons(
-        "weighting_scheme",
-        "Weighting",
-        c("Equal-weighted" = "EW", "Value-weighted" = "VW"),
-        selected = "VW"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 4: Exclusion filters (two columns) ----
+      tags$span(class = "section-label", "Exclusion filters"),
+      fluidRow(
+        column(
+          6,
+          checkboxInput("exclude_financials", "Exclude financials", FALSE),
+          checkboxInput("exclude_utilities", "Exclude utilities", FALSE)
+        ),
+        column(
+          6,
+          checkboxInput(
+            "exclude_negative_earnings",
+            "Exclude negative earnings",
+            FALSE
+          )
+        )
       ),
-      radioButtons(
-        "exclude_size",
-        "Exclude small firms?",
-        c("No" = 0, "Smallest 20%" = 0.2),
-        selected = 0.2
-      ),
-      checkboxInput("exclude_financials", "Exclude financials", FALSE),
-      checkboxInput("exclude_utilities", "Exclude utilities", FALSE),
-      checkboxInput(
-        "exclude_negative_earnings",
-        "Exclude negative earnings",
-        FALSE
-      ),
-      actionButton("download_csv", "Download CSV"),
-      actionButton("download_parquet", "Download Parquet")
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 5: Actions (two columns) ----
+      fluidRow(
+        class = "action-row",
+        column(6, actionButton("download_csv", "Download CSV")),
+        column(6, actionButton("download_parquet", "Download Parquet"))
+      )
     ),
 
     mainPanel(
+      width = 8,
       plotOutput("plot"),
       tableOutput("summary_table"),
       h4("Download via R"),
@@ -380,6 +459,13 @@ server <- function(input, output, session) {
         exclude_negative_earnings == input$exclude_negative_earnings
       )
 
+    if (input$breakpoints_min_size == "NA") {
+      res <- res %>% filter(is.na(breakpoints_min_size))
+    } else {
+      res <- res %>%
+        filter(breakpoints_min_size == as.numeric(input$breakpoints_min_size))
+    }
+
     if (input$sorting_method != "univariate") {
       res <- res %>%
         filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
@@ -395,12 +481,16 @@ server <- function(input, output, session) {
 
     sv <- sub("^sv_", "", input$sorting_variable)
     lag <- input$sorting_variable_lag
-    cache_file <- paste0(sv, "_", lag, ".parquet")
+    method <- input$sorting_method
+    bp_main <- input$breakpoints_main
+    cache_file <- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url <- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/breakpoints_main=%s/part-0.parquet",
       sv,
-      lag
+      lag,
+      method,
+      bp_main
     )
 
     target_id <- matched_id()
@@ -425,6 +515,14 @@ server <- function(input, output, session) {
       sprintf('sorting_method = "%s"', input$sorting_method),
       sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
       sprintf('weighting_scheme = "%s"', input$weighting_scheme),
+      sprintf(
+        'breakpoints_min_size = %s',
+        ifelse(
+          input$breakpoints_min_size == "NA",
+          "NULL",
+          input$breakpoints_min_size
+        )
+      ),
       sprintf('exclude_size = %s', input$exclude_size),
       sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
       sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
@@ -453,9 +551,7 @@ server <- function(input, output, session) {
 
     tags$pre(
       style = "white-space: pre; display: block; ...",
-      tags$code(
-        code
-      )
+      code
     )
   })
 
@@ -471,43 +567,29 @@ server <- function(input, output, session) {
     dat <- factor_data()
     dat$date <- as.Date(dat$date)
 
+    selected_type <- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[
+      input$weighting_scheme
+    ]]
+
     dat <- dat %>%
-      group_by(ret_type) %>%
+      filter(ret_type == selected_type) %>%
       arrange(date) %>%
-      mutate(cumret = cumprod(1 + ret) - 1) %>%
-      ungroup()
-
-    ew <- dat[dat$ret_type == "ew", ]
-    vw <- dat[dat$ret_type == "vw", ]
-
-    ylim <- range(dat$cumret, na.rm = TRUE)
-    xlim <- range(dat$date, na.rm = TRUE)
+      mutate(cumret = cumprod(1 + ret) - 1)
 
     plot(
-      ew$date,
-      ew$cumret,
+      dat$date,
+      dat$cumret,
       type = "l",
       lwd = 2,
       col = tf_primary,
-      xlim = xlim,
-      ylim = ylim,
       main = sprintf("Cumulative HML returns: %s", sv_full_name()),
       xlab = "",
       ylab = "Cumulative return",
       yaxt = "n"
     )
-    lines(vw$date, vw$cumret, lwd = 2, col = tf_secondary)
 
     at <- axTicks(2)
     axis(2, at = at, labels = sprintf("%.0f%%", at * 100))
-
-    legend(
-      "topleft",
-      legend = c("Equal-weighted", "Value-weighted"),
-      col = c(tf_primary, tf_secondary),
-      lwd = 2,
-      bty = "n"
-    )
   })
 
   output$summary_table <- renderTable(
@@ -515,11 +597,11 @@ server <- function(input, output, session) {
       req(nrow(factor_data()) > 0)
       factor_data() %>%
         mutate(
-          Weighting = ifelse(
-            ret_type == "ew",
-            "Equal-weighted",
-            "Value-weighted"
-          )
+          Weighting = c(
+            ew = "Equal-weighted",
+            vw = "Value-weighted",
+            vw_capped = "Capped VW"
+          )[ret_type]
         ) %>%
         group_by(Weighting) %>%
         summarise(
@@ -575,4 +657,5 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
+:::
 :::
