@@ -1,5 +1,5 @@
 ---
-title: "Factor Libary"
+title: "Factor Library"
 --- 
 
 This app provides access to the factor library described in *Uncertainty Everywhere* (Gruber, Kastner, Voigt, and Weiss, 2024). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from [HuggingFace](https://huggingface.co/datasets/tidy-finance/factor-library) and cached in your browser for the session.
