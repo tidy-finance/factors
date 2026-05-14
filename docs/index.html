@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.23">
+<meta name="generator" content="quarto-1.8.25">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -40,14 +40,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-1fe81d0376b2c50856e68e651e390326.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-09d066f7c8c75433ca26c43dab7c8893.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-0514632cc3f7a6d071f65f884e64e3e1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
-<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/load-shinylive-sw.js" type="module"></script>
-<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/run-python-blocks.js" type="module"></script>
-<link href="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/shinylive.css" rel="stylesheet">
+<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/run-python-blocks.js" type="module"></script>
+<link href="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/shinylive.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
@@ -207,11 +207,12 @@ cookieconsent.run({
 
 <p>This app provides access to the factor library described in <em>Uncertainty Everywhere</em> (Gruber, Kastner, Voigt, and Weiss, 2024). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from <a href="https://huggingface.co/datasets/tidy-finance/factor-library">HuggingFace</a> and cached in your browser for the session.</p>
 <div class="column-screen-inset">
+<div style="max-width: 1600px; margin: 0 auto;">
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
 #| standalone: true
-#| viewerHeight: 1200px
+#| viewerHeight: 1000px
 library(poorman)
 library(nanoparquet)
 library(base64enc)
@@ -412,14 +413,31 @@ ui &lt;- fluidPage(
   tags$head(
     tags$style(HTML(sprintf(
       "
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding-top: 20px;}
     h2 { color: %s; }
     .sidebar { background-color: #f8f9fa; }
     .btn-default { background-color: %s; color: white; border-color: %s; }
     .btn-default:hover { background-color: %s; color: white; border-color: %s; }
     a { color: %s; }
     a:hover { color: %s; }
-    hr { border-top: 2px solid %s; }
+    hr.section-divider {
+      border: 0;
+      border-top: 2px solid %s;
+      margin: 15px 0 12px 0;
+    }
+    .section-label {
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: %s;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .sidebar .form-group { margin-bottom: 12px; }
+    .sidebar .radio { margin-top: 3px; margin-bottom: 3px; }
+    .sidebar label { font-weight: 600; font-size: 0.9em; }
+    .action-row .btn { width: 100%%; }
   ",
       tf_primary,
       tf_primary,
@@ -428,7 +446,8 @@ ui &lt;- fluidPage(
       tf_secondary,
       tf_primary,
       tf_secondary,
-      tf_muted
+      tf_muted,
+      tf_primary
     ))),
     tags$script(HTML(
       "
@@ -446,6 +465,10 @@ ui &lt;- fluidPage(
 
   sidebarLayout(
     sidebarPanel(
+      width = 4,
+
+      # ---- Section 1: Variable selection (full width) ----
+      tags$span(class = "section-label", "Factor"),
       selectizeInput(
         "sorting_variable",
         "Sorting variable",
@@ -491,25 +514,24 @@ ui &lt;- fluidPage(
           selected = 2
         )
       ),
-      radioButtons(
-        "breakpoints_exchanges",
-        "Exchanges",
-        c("NYSE only" = "NYSE", "All exchanges" = "AMEX|NASDAQ|NYSE"),
-        selected = "NYSE"
-      ),
-      radioButtons(
-        "breakpoints_min_size",
-        "Breakpoints min. size",
-        c("None" = "NA", "Smallest 20%" = "0.2"),
-        selected = "NA"
-      ),
-      radioButtons(
-        "weighting_scheme",
-        "Weighting",
-        c(
-          "Equal-weighted" = "EW",
-          "Value-weighted" = "VW",
-          "Capped VW" = "capped VW"
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 3: Weighting &amp; size (two columns) ----
+      tags$span(class = "section-label", "Weighting &amp; size"),
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "weighting_scheme",
+            "Weighting",
+            c(
+              "Equal-weighted" = "EW",
+              "Value-weighted" = "VW",
+              "Capped VW" = "capped VW"
+            ),
+            selected = "VW"
+          )
         ),
         selected = "VW"
       ),
@@ -519,18 +541,39 @@ ui &lt;- fluidPage(
         c("No" = "NA", "Smallest 20%" = "0.2"),
         selected = "0.2"
       ),
-      checkboxInput("exclude_financials", "Exclude financials", FALSE),
-      checkboxInput("exclude_utilities", "Exclude utilities", FALSE),
-      checkboxInput(
-        "exclude_negative_earnings",
-        "Exclude negative earnings",
-        FALSE
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 4: Exclusion filters (two columns) ----
+      tags$span(class = "section-label", "Exclusion filters"),
+      fluidRow(
+        column(
+          6,
+          checkboxInput("exclude_financials", "Exclude financials", FALSE),
+          checkboxInput("exclude_utilities", "Exclude utilities", FALSE)
+        ),
+        column(
+          6,
+          checkboxInput(
+            "exclude_negative_earnings",
+            "Exclude negative earnings",
+            FALSE
+          )
+        )
       ),
-      actionButton("download_csv", "Download CSV"),
-      actionButton("download_parquet", "Download Parquet")
+
+      tags$hr(class = "section-divider"),
+
+      # ---- Section 5: Actions (two columns) ----
+      fluidRow(
+        class = "action-row",
+        column(6, actionButton("download_csv", "Download CSV")),
+        column(6, actionButton("download_parquet", "Download Parquet"))
+      )
     ),
 
     mainPanel(
+      width = 8,
       plotOutput("plot"),
       tableOutput("summary_table"),
       h4("Download via R"),
@@ -808,20 +851,16 @@ server &lt;- function(input, output, session) {
 
 shinyApp(ui, server)</code></pre>
 </div>
+</div>
 
 
 
 </main> <!-- /main -->
 <div class="custom-footer">
-
   <div class="copyright">© Christoph Frey, Christoph Scheuch, Stefan Voigt &amp; Patrick Weiss</div>
-
   <a href="https://www.tidy-finance.org/disclaimer.html">Disclaimer</a>
-
   <a href="#" id="open_preferences_center">Cookie Preferences</a>
-
 </div>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
