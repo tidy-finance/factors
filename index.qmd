@@ -264,7 +264,7 @@ ui <- fluidPage(
         selected = "annual"
       ),
       radioButtons(
-        "breakpoints_main",
+        "n_portfolios_main",
         "Breakpoints",
         c("Three" = 3, "Five" = 5, "Ten" = 10),
         selected = 10
@@ -282,7 +282,7 @@ ui <- fluidPage(
       conditionalPanel(
         "input.sorting_method != 'univariate'",
         radioButtons(
-          "breakpoints_secondary",
+          "n_portfolios_secondary",
           "Secondary breakpoints",
           c("Two" = 2, "Five" = 5),
           selected = 2
@@ -311,10 +311,10 @@ ui <- fluidPage(
         selected = "VW"
       ),
       radioButtons(
-        "exclude_size",
+        "min_size_quantile",
         "Exclude small firms?",
-        c("No" = 0, "Smallest 20%" = 0.2),
-        selected = 0.2
+        c("No" = "NA", "Smallest 20%" = "0.2"),
+        selected = "0.2"
       ),
       checkboxInput("exclude_financials", "Exclude financials", FALSE),
       checkboxInput("exclude_utilities", "Exclude utilities", FALSE),
@@ -380,26 +380,37 @@ server <- function(input, output, session) {
         sorting_variable == input$sorting_variable,
         sorting_variable_lag == input$sorting_variable_lag,
         rebalancing == input$rebalancing,
-        breakpoints_main == as.numeric(input$breakpoints_main),
+        n_portfolios_main == as.numeric(input$n_portfolios_main),
         sorting_method == input$sorting_method,
         breakpoints_exchanges == input$breakpoints_exchanges,
         weighting_scheme == input$weighting_scheme,
-        exclude_size == as.numeric(input$exclude_size),
         exclude_financials == input$exclude_financials,
         exclude_utilities == input$exclude_utilities,
         exclude_negative_earnings == input$exclude_negative_earnings
       )
 
-    if (input$breakpoints_min_size == "NA") {
-      res <- res %>% filter(is.na(breakpoints_min_size))
+    if (input$min_size_quantile == "NA") {
+      res <- res %>% filter(is.na(min_size_quantile))
     } else {
       res <- res %>%
-        filter(breakpoints_min_size == as.numeric(input$breakpoints_min_size))
+        filter(min_size_quantile == as.numeric(input$min_size_quantile))
+    }
+
+    if (input$breakpoints_min_size == "NA") {
+      res <- res %>% filter(is.na(breakpoints_min_size_threshold))
+    } else {
+      res <- res %>%
+        filter(
+          breakpoints_min_size_threshold ==
+            as.numeric(input$breakpoints_min_size)
+        )
     }
 
     if (input$sorting_method != "univariate") {
       res <- res %>%
-        filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
+        filter(
+          n_portfolios_secondary == as.numeric(input$n_portfolios_secondary)
+        )
     }
 
     res %>%
@@ -413,11 +424,11 @@ server <- function(input, output, session) {
     sv <- sub("^sv_", "", input$sorting_variable)
     lag <- input$sorting_variable_lag
     method <- input$sorting_method
-    bp_main <- input$breakpoints_main
+    bp_main <- input$n_portfolios_main
     cache_file <- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url <- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/breakpoints_main=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/n_portfolios_main=%s/part-0.parquet",
       sv,
       lag,
       method,
@@ -442,19 +453,26 @@ server <- function(input, output, session) {
       sprintf('sorting_variable = "%s"', sv),
       sprintf('sorting_variable_lag = "%s"', input$sorting_variable_lag),
       sprintf('rebalancing = "%s"', input$rebalancing),
-      sprintf('breakpoints_main = %s', input$breakpoints_main),
+      sprintf('n_portfolios_main = %s', input$n_portfolios_main),
       sprintf('sorting_method = "%s"', input$sorting_method),
       sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
       sprintf('weighting_scheme = "%s"', input$weighting_scheme),
       sprintf(
-        'breakpoints_min_size = %s',
+        'breakpoints_min_size_threshold = %s',
         ifelse(
           input$breakpoints_min_size == "NA",
           "NULL",
           input$breakpoints_min_size
         )
       ),
-      sprintf('exclude_size = %s', input$exclude_size),
+      sprintf(
+        'min_size_quantile = %s',
+        ifelse(
+          input$min_size_quantile == "NA",
+          "NULL",
+          input$min_size_quantile
+        )
+      ),
       sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
       sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
       sprintf(
@@ -466,7 +484,7 @@ server <- function(input, output, session) {
     if (input$sorting_method != "univariate") {
       args <- c(
         args,
-        sprintf('breakpoints_secondary = %s', input$breakpoints_secondary)
+        sprintf('n_portfolios_secondary = %s', input$n_portfolios_secondary)
       )
     }
 
@@ -498,7 +516,9 @@ server <- function(input, output, session) {
     dat <- factor_data()
     dat$date <- as.Date(dat$date)
 
-    selected_type <- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[input$weighting_scheme]]
+    selected_type <- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[
+      input$weighting_scheme
+    ]]
 
     dat <- dat %>%
       filter(ret_type == selected_type) %>%
