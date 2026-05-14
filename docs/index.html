@@ -477,60 +477,41 @@ ui &lt;- fluidPage(
         options = list(placeholder = "Type to search...")
       ),
       uiOutput("sv_detail"),
-
-      tags$hr(class = "section-divider"),
-
-      # ---- Section 2: Sorting configuration (two columns) ----
-      tags$span(class = "section-label", "Sorting configuration"),
-      fluidRow(
-        column(
-          6,
-          radioButtons(
-            "sorting_variable_lag",
-            "Lag",
-            c("3 months" = "3m", "6 months" = "6m", "Fama-French" = "ff"),
-            selected = "3m"
-          ),
-          radioButtons(
-            "breakpoints_main",
-            "Breakpoints",
-            c("Three" = 3, "Five" = 5, "Ten" = 10),
-            selected = 10
-          ),
-          radioButtons(
-            "breakpoints_exchanges",
-            "Exchanges",
-            c("NYSE only" = "NYSE", "All" = "AMEX|NASDAQ|NYSE"),
-            selected = "NYSE"
-          )
+      radioButtons(
+        "sorting_variable_lag",
+        "Lag",
+        c("3 months" = "3m", "6 months" = "6m", "Fama-French style" = "ff"),
+        selected = "3m"
+      ),
+      radioButtons(
+        "rebalancing",
+        "Rebalancing",
+        c("Monthly" = "monthly", "Annual" = "annual"),
+        selected = "annual"
+      ),
+      radioButtons(
+        "n_portfolios_main",
+        "Breakpoints",
+        c("Three" = 3, "Five" = 5, "Ten" = 10),
+        selected = 10
+      ),
+      radioButtons(
+        "sorting_method",
+        "Sorting method",
+        c(
+          "Univariate" = "univariate",
+          "Bivariate (dependent)" = "bivariate-dependent",
+          "Bivariate (independent)" = "bivariate-independent"
         ),
-        column(
-          6,
-          radioButtons(
-            "rebalancing",
-            "Rebalancing",
-            c("Monthly" = "monthly", "Annual" = "annual"),
-            selected = "annual"
-          ),
-          radioButtons(
-            "sorting_method",
-            "Sorting method",
-            c(
-              "Univariate" = "univariate",
-              "Bivariate (dep.)" = "bivariate-dependent",
-              "Bivariate (indep.)" = "bivariate-independent"
-            ),
-            selected = "bivariate-dependent"
-          ),
-          conditionalPanel(
-            "input.sorting_method != 'univariate'",
-            radioButtons(
-              "breakpoints_secondary",
-              "Secondary bp.",
-              c("Two" = 2, "Five" = 5),
-              selected = 2
-            )
-          )
+        selected = "bivariate-dependent"
+      ),
+      conditionalPanel(
+        "input.sorting_method != 'univariate'",
+        radioButtons(
+          "n_portfolios_secondary",
+          "Secondary breakpoints",
+          c("Two" = 2, "Five" = 5),
+          selected = 2
         )
       ),
 
@@ -552,21 +533,13 @@ ui &lt;- fluidPage(
             selected = "VW"
           )
         ),
-        column(
-          6,
-          radioButtons(
-            "breakpoints_min_size",
-            "Breakpoints min. size",
-            c("None" = "NA", "Smallest 20%" = "0.2"),
-            selected = "NA"
-          ),
-          radioButtons(
-            "exclude_size",
-            "Exclude small firms?",
-            c("No" = 0, "Smallest 20%" = 0.2),
-            selected = 0.2
-          )
-        )
+        selected = "VW"
+      ),
+      radioButtons(
+        "min_size_quantile",
+        "Exclude small firms?",
+        c("No" = "NA", "Smallest 20%" = "0.2"),
+        selected = "0.2"
       ),
 
       tags$hr(class = "section-divider"),
@@ -653,26 +626,37 @@ server &lt;- function(input, output, session) {
         sorting_variable == input$sorting_variable,
         sorting_variable_lag == input$sorting_variable_lag,
         rebalancing == input$rebalancing,
-        breakpoints_main == as.numeric(input$breakpoints_main),
+        n_portfolios_main == as.numeric(input$n_portfolios_main),
         sorting_method == input$sorting_method,
         breakpoints_exchanges == input$breakpoints_exchanges,
         weighting_scheme == input$weighting_scheme,
-        exclude_size == as.numeric(input$exclude_size),
         exclude_financials == input$exclude_financials,
         exclude_utilities == input$exclude_utilities,
         exclude_negative_earnings == input$exclude_negative_earnings
       )
 
-    if (input$breakpoints_min_size == "NA") {
-      res &lt;- res %&gt;% filter(is.na(breakpoints_min_size))
+    if (input$min_size_quantile == "NA") {
+      res &lt;- res %&gt;% filter(is.na(min_size_quantile))
     } else {
       res &lt;- res %&gt;%
-        filter(breakpoints_min_size == as.numeric(input$breakpoints_min_size))
+        filter(min_size_quantile == as.numeric(input$min_size_quantile))
+    }
+
+    if (input$breakpoints_min_size == "NA") {
+      res &lt;- res %&gt;% filter(is.na(breakpoints_min_size_threshold))
+    } else {
+      res &lt;- res %&gt;%
+        filter(
+          breakpoints_min_size_threshold ==
+            as.numeric(input$breakpoints_min_size)
+        )
     }
 
     if (input$sorting_method != "univariate") {
       res &lt;- res %&gt;%
-        filter(breakpoints_secondary == as.numeric(input$breakpoints_secondary))
+        filter(
+          n_portfolios_secondary == as.numeric(input$n_portfolios_secondary)
+        )
     }
 
     res %&gt;%
@@ -686,11 +670,11 @@ server &lt;- function(input, output, session) {
     sv &lt;- sub("^sv_", "", input$sorting_variable)
     lag &lt;- input$sorting_variable_lag
     method &lt;- input$sorting_method
-    bp_main &lt;- input$breakpoints_main
+    bp_main &lt;- input$n_portfolios_main
     cache_file &lt;- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url &lt;- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/factor-library/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/breakpoints_main=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/n_portfolios_main=%s/part-0.parquet",
       sv,
       lag,
       method,
@@ -715,19 +699,26 @@ server &lt;- function(input, output, session) {
       sprintf('sorting_variable = "%s"', sv),
       sprintf('sorting_variable_lag = "%s"', input$sorting_variable_lag),
       sprintf('rebalancing = "%s"', input$rebalancing),
-      sprintf('breakpoints_main = %s', input$breakpoints_main),
+      sprintf('n_portfolios_main = %s', input$n_portfolios_main),
       sprintf('sorting_method = "%s"', input$sorting_method),
       sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
       sprintf('weighting_scheme = "%s"', input$weighting_scheme),
       sprintf(
-        'breakpoints_min_size = %s',
+        'breakpoints_min_size_threshold = %s',
         ifelse(
           input$breakpoints_min_size == "NA",
           "NULL",
           input$breakpoints_min_size
         )
       ),
-      sprintf('exclude_size = %s', input$exclude_size),
+      sprintf(
+        'min_size_quantile = %s',
+        ifelse(
+          input$min_size_quantile == "NA",
+          "NULL",
+          input$min_size_quantile
+        )
+      ),
       sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
       sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
       sprintf(
@@ -739,7 +730,7 @@ server &lt;- function(input, output, session) {
     if (input$sorting_method != "univariate") {
       args &lt;- c(
         args,
-        sprintf('breakpoints_secondary = %s', input$breakpoints_secondary)
+        sprintf('n_portfolios_secondary = %s', input$n_portfolios_secondary)
       )
     }
 
