@@ -329,13 +329,35 @@ ui <- fluidPage(
             selected = "VW"
           )
         ),
-        selected = "VW"
+        column(
+          6,
+          radioButtons(
+            "breakpoints_min_size",
+            "Breakpoints min. size",
+            c("None" = "NA", "Smallest 20%" = "0.2"),
+            selected = "NA"
+          )
+        )
       ),
-      radioButtons(
-        "min_size_quantile",
-        "Exclude small firms?",
-        c("No" = "NA", "Smallest 20%" = "0.2"),
-        selected = "0.2"
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "breakpoints_exchanges",
+            "Exchanges",
+            c("NYSE only" = "NYSE", "All exchanges" = "AMEX|NASDAQ|NYSE"),
+            selected = "NYSE"
+          )
+        ),
+        column(
+          6,
+          radioButtons(
+            "min_size_quantile",
+            "Exclude small firms?",
+            c("No" = "NA", "Smallest 20%" = "0.2"),
+            selected = "0.2"
+          )
+        )
       ),
 
       tags$hr(class = "section-divider"),

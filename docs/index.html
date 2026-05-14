@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.25">
+<meta name="generator" content="quarto-1.8.23">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Factor Libary – Tidy Finance</title>
+<title>Factor Library – Tidy Finance</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -40,14 +40,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-1fe81d0376b2c50856e68e651e390326.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-0514632cc3f7a6d071f65f884e64e3e1.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-09d066f7c8c75433ca26c43dab7c8893.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
-<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/load-shinylive-sw.js" type="module"></script>
-<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/run-python-blocks.js" type="module"></script>
-<link href="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/shinylive.css" rel="stylesheet">
+<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/run-python-blocks.js" type="module"></script>
+<link href="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/shinylive.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
@@ -108,7 +108,7 @@ cookieconsent.run({
 
 <link rel="stylesheet" href="assets/css/global.css">
 <link rel="stylesheet" href="assets/css/talks.css">
-<meta property="og:title" content="Factor Libary – Tidy Finance">
+<meta property="og:title" content="Factor Library – Tidy Finance">
 <meta property="og:description" content="A transparent factor library by the Tidy Finance team">
 <meta property="og:image" content="https://factors.tidy-finance.org/assets/img/cover.png">
 <meta property="og:site_name" content="Tidy Finance">
@@ -188,7 +188,7 @@ cookieconsent.run({
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Factor Libary</h1>
+<h1 class="title">Factor Library</h1>
 </div>
 
 
@@ -533,13 +533,35 @@ ui &lt;- fluidPage(
             selected = "VW"
           )
         ),
-        selected = "VW"
+        column(
+          6,
+          radioButtons(
+            "breakpoints_min_size",
+            "Breakpoints min. size",
+            c("None" = "NA", "Smallest 20%" = "0.2"),
+            selected = "NA"
+          )
+        )
       ),
-      radioButtons(
-        "min_size_quantile",
-        "Exclude small firms?",
-        c("No" = "NA", "Smallest 20%" = "0.2"),
-        selected = "0.2"
+      fluidRow(
+        column(
+          6,
+          radioButtons(
+            "breakpoints_exchanges",
+            "Exchanges",
+            c("NYSE only" = "NYSE", "All exchanges" = "AMEX|NASDAQ|NYSE"),
+            selected = "NYSE"
+          )
+        ),
+        column(
+          6,
+          radioButtons(
+            "min_size_quantile",
+            "Exclude small firms?",
+            c("No" = "NA", "Smallest 20%" = "0.2"),
+            selected = "0.2"
+          )
+        )
       ),
 
       tags$hr(class = "section-divider"),
@@ -857,10 +879,15 @@ shinyApp(ui, server)</code></pre>
 
 </main> <!-- /main -->
 <div class="custom-footer">
+
   <div class="copyright">© Christoph Frey, Christoph Scheuch, Stefan Voigt &amp; Patrick Weiss</div>
+
   <a href="https://www.tidy-finance.org/disclaimer.html">Disclaimer</a>
+
   <a href="#" id="open_preferences_center">Cookie Preferences</a>
+
 </div>
+
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
