@@ -2,13 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.23">
+<meta name="generator" content="quarto-1.9.38">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Factor Library – Tidy Finance</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -35,19 +38,18 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/cookie-consent/cookie-consent.css" rel="stylesheet">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-1fe81d0376b2c50856e68e651e390326.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-09d066f7c8c75433ca26c43dab7c8893.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-2e93c9ea7df6fcc5d90b01baca22926b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
-<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/load-shinylive-sw.js" type="module"></script>
-<script src="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/run-python-blocks.js" type="module"></script>
-<link href="site_libs/quarto-contrib/shinylive-0.9.1/shinylive/shinylive.css" rel="stylesheet">
+<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/run-python-blocks.js" type="module"></script>
+<link href="site_libs/quarto-contrib/shinylive-0.10.8/shinylive/shinylive.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
@@ -438,6 +440,21 @@ ui &lt;- fluidPage(
     .sidebar .radio { margin-top: 3px; margin-bottom: 3px; }
     .sidebar label { font-weight: 600; font-size: 0.9em; }
     .action-row .btn { width: 100%%; }
+    .code-block { position: relative; }
+    .code-block pre { margin: 0; padding-right: 70px; }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 0.75em;
+      padding: 2px 8px;
+      border: 1px solid %s;
+      border-radius: 4px;
+      background-color: white;
+      color: %s;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background-color: %s; color: white; }
   ",
       tf_primary,
       tf_primary,
@@ -447,6 +464,9 @@ ui &lt;- fluidPage(
       tf_primary,
       tf_secondary,
       tf_muted,
+      tf_primary,
+      tf_primary,
+      tf_primary,
       tf_primary
     ))),
     tags$script(HTML(
@@ -459,6 +479,15 @@ ui &lt;- fluidPage(
     a.click();
     document.body.removeChild(a);
   });
+
+  function copyCode(btn) {
+    var pre = btn.parentNode.querySelector('pre');
+    navigator.clipboard.writeText(pre.textContent).then(function() {
+      var original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = original; }, 1500);
+    });
+  }
 "
     ))
   ),
@@ -598,18 +627,42 @@ ui &lt;- fluidPage(
       width = 8,
       plotOutput("plot"),
       tableOutput("summary_table"),
-      h4("Download via R"),
+      h4("Download programmatically"),
       p(
         "You can download this portfolio return series programmatically",
-        "using the",
-        tags$a(
-          "tidyfinance",
-          href = "https://cran.r-project.org/package=tidyfinance",
-          target = "_blank"
-        ),
-        "R package:"
+        "using the tidyfinance package, which provides almost the same",
+        "interface in R and Python:"
       ),
-      uiOutput("code_snippet")
+      tabsetPanel(
+        tabPanel(
+          "R",
+          tags$br(),
+          p(
+            "Using the",
+            tags$a(
+              "tidyfinance",
+              href = "https://cran.r-project.org/package=tidyfinance",
+              target = "_blank"
+            ),
+            "R package:"
+          ),
+          uiOutput("code_snippet_r")
+        ),
+        tabPanel(
+          "Python",
+          tags$br(),
+          p(
+            "Using the",
+            tags$a(
+              "tidyfinance",
+              href = "https://pypi.org/project/tidyfinance/",
+              target = "_blank"
+            ),
+            "Python package:"
+          ),
+          uiOutput("code_snippet_py")
+        )
+      )
     )
   )
 )
@@ -714,47 +767,71 @@ server &lt;- function(input, output, session) {
     })
   })
 
-  output$code_snippet &lt;- renderUI({
+  # Build the argument values shared by both code snippets. `sep` controls the
+  # spacing around the assignment (" = " in R, "=" in Python) and `null_value`
+  # / the boolean labels differ between the two languages.
+  build_args &lt;- function(sep, null_value, bool_labels) {
     sv &lt;- sub("^sv_", "", input$sorting_variable)
 
     args &lt;- c(
-      sprintf('sorting_variable = "%s"', sv),
-      sprintf('sorting_variable_lag = "%s"', input$sorting_variable_lag),
-      sprintf('rebalancing = "%s"', input$rebalancing),
-      sprintf('n_portfolios_main = %s', input$n_portfolios_main),
-      sprintf('sorting_method = "%s"', input$sorting_method),
-      sprintf('breakpoints_exchanges = "%s"', input$breakpoints_exchanges),
-      sprintf('weighting_scheme = "%s"', input$weighting_scheme),
+      sprintf('sorting_variable%s"%s"', sep, sv),
+      sprintf('sorting_variable_lag%s"%s"', sep, input$sorting_variable_lag),
+      sprintf('rebalancing%s"%s"', sep, input$rebalancing),
+      sprintf('n_portfolios_main%s%s', sep, input$n_portfolios_main),
+      sprintf('sorting_method%s"%s"', sep, input$sorting_method),
+      sprintf('breakpoints_exchanges%s"%s"', sep, input$breakpoints_exchanges),
+      sprintf('weighting_scheme%s"%s"', sep, input$weighting_scheme),
       sprintf(
-        'breakpoints_min_size_threshold = %s',
+        'breakpoints_min_size_threshold%s%s',
+        sep,
         ifelse(
           input$breakpoints_min_size == "NA",
-          "NULL",
+          null_value,
           input$breakpoints_min_size
         )
       ),
       sprintf(
-        'min_size_quantile = %s',
+        'min_size_quantile%s%s',
+        sep,
         ifelse(
           input$min_size_quantile == "NA",
-          "NULL",
+          null_value,
           input$min_size_quantile
         )
       ),
-      sprintf('exclude_financials = %s', toupper(input$exclude_financials)),
-      sprintf('exclude_utilities = %s', toupper(input$exclude_utilities)),
       sprintf(
-        'exclude_negative_earnings = %s',
-        toupper(input$exclude_negative_earnings)
+        'exclude_financials%s%s',
+        sep,
+        bool_labels[[as.character(input$exclude_financials)]]
+      ),
+      sprintf(
+        'exclude_utilities%s%s',
+        sep,
+        bool_labels[[as.character(input$exclude_utilities)]]
+      ),
+      sprintf(
+        'exclude_negative_earnings%s%s',
+        sep,
+        bool_labels[[as.character(input$exclude_negative_earnings)]]
       )
     )
 
     if (input$sorting_method != "univariate") {
       args &lt;- c(
         args,
-        sprintf('n_portfolios_secondary = %s', input$n_portfolios_secondary)
+        sprintf('n_portfolios_secondary%s%s', sep, input$n_portfolios_secondary)
       )
     }
+
+    args
+  }
+
+  output$code_snippet_r &lt;- renderUI({
+    args &lt;- build_args(
+      sep = " = ",
+      null_value = "NULL",
+      bool_labels = list("TRUE" = "TRUE", "FALSE" = "FALSE")
+    )
 
     code &lt;- paste0(
       "library(tidyfinance)\n\n",
@@ -764,11 +841,38 @@ server &lt;- function(input, output, session) {
       "\n)"
     )
 
-    print(code)
+    tags$div(
+      class = "code-block",
+      tags$button(class = "copy-btn", onclick = "copyCode(this)", "Copy"),
+      tags$pre(
+        style = "white-space: pre; display: block;",
+        code
+      )
+    )
+  })
 
-    tags$pre(
-      style = "white-space: pre; display: block; ...",
-      code
+  output$code_snippet_py &lt;- renderUI({
+    args &lt;- build_args(
+      sep = "=",
+      null_value = "None",
+      bool_labels = list("TRUE" = "True", "FALSE" = "False")
+    )
+
+    code &lt;- paste0(
+      "import tidyfinance as tf\n\n",
+      "tf.download_data(\n",
+      '  "tidyfinance", "factor_library",\n',
+      paste0("  ", args, collapse = ",\n"),
+      "\n)"
+    )
+
+    tags$div(
+      class = "code-block",
+      tags$button(class = "copy-btn", onclick = "copyCode(this)", "Copy"),
+      tags$pre(
+        style = "white-space: pre; display: block;",
+        code
+      )
     )
   })
 
@@ -879,15 +983,10 @@ shinyApp(ui, server)</code></pre>
 
 </main> <!-- /main -->
 <div class="custom-footer">
-
   <div class="copyright">© Christoph Frey, Christoph Scheuch, Stefan Voigt &amp; Patrick Weiss</div>
-
   <a href="https://www.tidy-finance.org/disclaimer.html">Disclaimer</a>
-
   <a href="#" id="open_preferences_center">Cookie Preferences</a>
-
 </div>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";

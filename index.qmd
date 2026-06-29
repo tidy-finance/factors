@@ -234,6 +234,21 @@ ui <- fluidPage(
     .sidebar .radio { margin-top: 3px; margin-bottom: 3px; }
     .sidebar label { font-weight: 600; font-size: 0.9em; }
     .action-row .btn { width: 100%%; }
+    .code-block { position: relative; }
+    .code-block pre { margin: 0; padding-right: 70px; }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 0.75em;
+      padding: 2px 8px;
+      border: 1px solid %s;
+      border-radius: 4px;
+      background-color: white;
+      color: %s;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background-color: %s; color: white; }
   ",
       tf_primary,
       tf_primary,
@@ -243,6 +258,9 @@ ui <- fluidPage(
       tf_primary,
       tf_secondary,
       tf_muted,
+      tf_primary,
+      tf_primary,
+      tf_primary,
       tf_primary
     ))),
     tags$script(HTML(
@@ -255,6 +273,15 @@ ui <- fluidPage(
     a.click();
     document.body.removeChild(a);
   });
+
+  function copyCode(btn) {
+    var pre = btn.parentNode.querySelector('pre');
+    navigator.clipboard.writeText(pre.textContent).then(function() {
+      var original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = original; }, 1500);
+    });
+  }
 "
     ))
   ),
@@ -608,9 +635,13 @@ server <- function(input, output, session) {
       "\n)"
     )
 
-    tags$pre(
-      style = "white-space: pre; display: block; ...",
-      code
+    tags$div(
+      class = "code-block",
+      tags$button(class = "copy-btn", onclick = "copyCode(this)", "Copy"),
+      tags$pre(
+        style = "white-space: pre; display: block;",
+        code
+      )
     )
   })
 
@@ -629,9 +660,13 @@ server <- function(input, output, session) {
       "\n)"
     )
 
-    tags$pre(
-      style = "white-space: pre; display: block; ...",
-      code
+    tags$div(
+      class = "code-block",
+      tags$button(class = "copy-btn", onclick = "copyCode(this)", "Copy"),
+      tags$pre(
+        style = "white-space: pre; display: block;",
+        code
+      )
     )
   })
 
