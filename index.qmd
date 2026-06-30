@@ -174,7 +174,7 @@ sv_info <- data.frame(
 )
 
 sv_choices <- setNames(
-  paste0("sv_", sv_info$sorting_variable),
+  sv_info$sorting_variable,
   paste0(sv_info$sorting_variable, " (", sv_info$full_name, ")")
 )
 
@@ -413,7 +413,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   output$sv_detail <- renderUI({
     req(input$sorting_variable)
-    sv_key <- sub("^sv_", "", input$sorting_variable)
+    sv_key <- input$sorting_variable
     info <- sv_info %>% filter(sorting_variable == sv_key)
     req(nrow(info) > 0)
 
@@ -485,7 +485,7 @@ server <- function(input, output, session) {
   factor_data <- reactive({
     req(length(matched_id()) > 0)
 
-    sv <- sub("^sv_", "", input$sorting_variable)
+    sv <- input$sorting_variable
     lag <- input$sorting_variable_lag
     method <- input$sorting_method
     bp_main <- input$n_portfolios_main
@@ -511,7 +511,7 @@ server <- function(input, output, session) {
   })
 
   output$code_snippet <- renderUI({
-    sv <- sub("^sv_", "", input$sorting_variable)
+    sv <- input$sorting_variable
 
     args <- c(
       sprintf('sorting_variable = "%s"', sv),
@@ -569,7 +569,7 @@ server <- function(input, output, session) {
   })
 
   sv_full_name <- reactive({
-    sv_key <- sub("^sv_", "", input$sorting_variable)
+    sv_key <- input$sorting_variable
     info <- sv_info %>% filter(sorting_variable == sv_key)
     if (nrow(info) > 0) info$full_name else sv_key
   })
