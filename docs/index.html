@@ -836,7 +836,7 @@ server &lt;- function(input, output, session) {
     code &lt;- paste0(
       "library(tidyfinance)\n\n",
       "download_data(\n",
-      '  "tidyfinance", "factor_library",\n',
+      '  "Tidy Finance", "factor_library",\n',
       paste0("  ", args, collapse = ",\n"),
       "\n)"
     )
@@ -861,7 +861,7 @@ server &lt;- function(input, output, session) {
     code &lt;- paste0(
       "import tidyfinance as tf\n\n",
       "tf.download_data(\n",
-      '  "tidyfinance", "factor_library",\n',
+      '  "Tidy Finance", "factor_library",\n',
       paste0("  ", args, collapse = ",\n"),
       "\n)"
     )
