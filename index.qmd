@@ -1,6 +1,6 @@
 ---
 title: "Factor Library"
---- 
+---
 
 This app provides access to the factor library described in *tidyfinance: Transparent Factor Construction for Empirical Asset Pricing* (Frey, Scheuch, Voigt, and Weiss, 2026). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from [HuggingFace](https://huggingface.co/datasets/tidy-finance/factor-library) and cached in your browser for the session.
 
@@ -174,7 +174,7 @@ sv_info <- data.frame(
 )
 
 sv_choices <- setNames(
-  paste0("sv_", sv_info$sorting_variable),
+  sv_info$sorting_variable,
   paste0(sv_info$sorting_variable, " (", sv_info$full_name, ")")
 )
 
@@ -464,7 +464,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   output$sv_detail <- renderUI({
     req(input$sorting_variable)
-    sv_key <- sub("^sv_", "", input$sorting_variable)
+    sv_key <- input$sorting_variable
     info <- sv_info %>% filter(sorting_variable == sv_key)
     req(nrow(info) > 0)
 
@@ -536,7 +536,7 @@ server <- function(input, output, session) {
   factor_data <- reactive({
     req(length(matched_id()) > 0)
 
-    sv <- sub("^sv_", "", input$sorting_variable)
+    sv <- input$sorting_variable
     lag <- input$sorting_variable_lag
     method <- input$sorting_method
     bp_main <- input$n_portfolios_main
@@ -565,7 +565,7 @@ server <- function(input, output, session) {
   # spacing around the assignment (" = " in R, "=" in Python) and `null_value`
   # / the boolean labels differ between the two languages.
   build_args <- function(sep, null_value, bool_labels) {
-    sv <- sub("^sv_", "", input$sorting_variable)
+    sv <- input$sorting_variable
 
     args <- c(
       sprintf('sorting_variable%s"%s"', sep, sv),
@@ -671,7 +671,7 @@ server <- function(input, output, session) {
   })
 
   sv_full_name <- reactive({
-    sv_key <- sub("^sv_", "", input$sorting_variable)
+    sv_key <- input$sorting_variable
     info <- sv_info %>% filter(sorting_variable == sv_key)
     if (nrow(info) > 0) info$full_name else sv_key
   })
