@@ -654,15 +654,16 @@ server &lt;- function(input, output, session) {
       )
     })
 
-    # The file of an id range is missing when none of its series has returns
+    # The file of an id range is missing when none of its series has returns.
+    # webR reports a failed download without the HTTP status, so a missing
+    # file cannot be told apart from a network error.
     if (inherits(dat, "error")) {
-      validate(
-        if (grepl("404", conditionMessage(dat))) {
-          no_returns_message
-        } else {
-          paste("Could not download the returns:", conditionMessage(dat))
-        }
-      )
+      validate(paste0(
+        "Could not download the returns for this specification (", file,
+        "). The factor library stores no such file when none of its 1,000 ",
+        "series has returns, because their portfolio sorts produced no ",
+        "portfolios."
+      ))
     }
 
     dat &lt;- dat %&gt;%
