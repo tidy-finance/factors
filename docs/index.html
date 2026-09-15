@@ -385,7 +385,7 @@ download_cached &lt;- function(url, filename) {
 
 grid_url &lt;- paste0(
   "https://huggingface.co/datasets/tidy-finance/factor-library-grid/",
-  "resolve/refs%2Fconvert%2Fparquet/default/train/0000.parquet"
+  "resolve/1d98a1742f135b94031e0925441508121e44a13e/portfolio_sort_grid.parquet"
 )
 grid_path &lt;- download_cached(grid_url, "grid.parquet")
 
@@ -737,7 +737,7 @@ server &lt;- function(input, output, session) {
     cache_file &lt;- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
 
     url &lt;- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/n_portfolios_main=%s/part-0.parquet",
+      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/42ca61426e06c8460dba39fcfe8431575134f2a9/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/n_portfolios_main=%s/part-0.parquet",
       sv,
       lag,
       method,
