@@ -45,7 +45,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-2e93c9ea7df6fcc5d90b01baca22926b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-15df67a978eff2724f248dfecb6ea2b0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
 <script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/load-shinylive-sw.js" type="module"></script>
 <script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/run-python-blocks.js" type="module"></script>
@@ -195,7 +195,7 @@ cookieconsent.run({
 </header>
 
 
-<p>This app provides access to the factor library described in <em>tidyfinance: Transparent Factor Construction for Empirical Asset Pricing</em> (Frey, Scheuch, Voigt, and Weiss, 2026). It covers 50 firm characteristics and over 400,000 high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from <a href="https://huggingface.co/datasets/tidy-finance/factor-library">HuggingFace</a> and cached in your browser for the session.</p>
+<p>This app provides access to the factor library described in <em>tidyfinance: Transparent Factor Construction for Empirical Asset Pricing</em> (Frey, Scheuch, Voigt, and Weiss, 2026). It covers 179 firm characteristics from <a href="https://www.openassetpricing.com/">Open Source Asset Pricing</a> and over 4 million high-minus-low portfolio return series constructed from different formation methods. Select a sorting variable and portfolio parameters below to explore the resulting return series. Data is fetched on demand from <a href="https://huggingface.co/datasets/tidy-finance/factor-library">HuggingFace</a> and cached in your browser for the session.</p>
 <div class="column-screen-inset">
 <div style="max-width: 1600px; margin: 0 auto;">
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
@@ -207,170 +207,8 @@ library(poorman)
 library(nanoparquet)
 library(base64enc)
 
-sv_info &lt;- data.frame(
-  sorting_variable = c(
-    "52w",
-    "aci",
-    "ag",
-    "ami",
-    "beta",
-    "bm",
-    "cbop",
-    "cdi",
-    "cfm",
-    "csi",
-    "dbe",
-    "dcol",
-    "dfnl",
-    "dinv",
-    "dm",
-    "dnoa",
-    "dpia",
-    "dtv",
-    "dwc",
-    "ebm",
-    "em",
-    "gpa",
-    "hr",
-    "ig",
-    "iskew",
-    "ivol",
-    "mdr",
-    "me",
-    "mom",
-    "ndf",
-    "ndm",
-    "nef",
-    "noa",
-    "npy",
-    "nxf",
-    "o",
-    "oa",
-    "ocm",
-    "ol",
-    "ope",
-    "rer",
-    "rev",
-    "rmom",
-    "roa",
-    "roe",
-    "rs",
-    "sm",
-    "sue",
-    "tbi",
-    "tur"
-  ),
-  full_name = c(
-    "52-Week High",
-    "Abnormal Corporate Investment",
-    "Asset Growth",
-    "Amihud Illiquidity",
-    "Beta",
-    "Book-to-Market",
-    "Cash-Based Operating Profitability",
-    "Composite Debt Issuance",
-    "Cash Flow to Market",
-    "Composite Share Issuance",
-    "Change in Common Equity",
-    "Change in Current Operating Liabilities",
-    "Change in Financial Liabilities",
-    "Inventory Changes",
-    "Debt to Market",
-    "Change in Net Operating Assets",
-    "Change in PPE and Intangibles",
-    "Dollar Trading Volume",
-    "Change in Working Capital",
-    "Enterprise Book to Market",
-    "Earnings to Market",
-    "Gross Profits to Assets",
-    "Hiring Rate",
-    "Investment Growth",
-    "Idiosyncratic Skewness",
-    "Idiosyncratic Volatility",
-    "Maximum Daily Return",
-    "Market Equity",
-    "Momentum",
-    "Net Debt Financing",
-    "Net Debt to Market",
-    "Net Equity Financing",
-    "Net Operating Assets",
-    "Net Payout Yield",
-    "Net External Financing",
-    "O-Score",
-    "Operating Accruals",
-    "Operating Cash Flow to Market",
-    "Operating Leverage",
-    "Operating Efficiency",
-    "Real-Estate Ratio",
-    "Long-Term Reversal",
-    "Residual Momentum",
-    "Return on Assets",
-    "Return on Equity",
-    "Relative Strength",
-    "Sales to Market",
-    "Standardized Unexpected Earnings",
-    "Taxable Income to Book Income",
-    "Share Turnover"
-  ),
-  direction = c(
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "top_minus_bottom",
-    "bottom_minus_top",
-    "bottom_minus_top"
-  ),
-  stringsAsFactors = FALSE
-)
-
-sv_choices &lt;- setNames(
-  sv_info$sorting_variable,
-  paste0(sv_info$sorting_variable, " (", sv_info$full_name, ")")
-)
+grid_url &lt;- "https://huggingface.co/datasets/tidy-finance/factor-library-grid/resolve/main/"
+returns_url &lt;- "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/main/"
 
 CACHE_DIR &lt;- file.path(tempdir(), "factor_library_cache")
 dir.create(CACHE_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -378,18 +216,57 @@ dir.create(CACHE_DIR, showWarnings = FALSE, recursive = TRUE)
 download_cached &lt;- function(url, filename) {
   path &lt;- file.path(CACHE_DIR, filename)
   if (!file.exists(path)) {
-    download.file(url, path, mode = "wb", quiet = TRUE)
+    # Download under a temporary name so that a failed download cannot leave
+    # a partial file in the cache for later reads
+    partial &lt;- paste0(path, ".part")
+    if (download.file(url, partial, mode = "wb", quiet = TRUE) != 0) {
+      stop("Download failed: ", url)
+    }
+    file.rename(partial, path)
   }
   path
 }
 
-grid_url &lt;- paste0(
-  "https://huggingface.co/datasets/tidy-finance/factor-library-grid/",
-  "resolve/1d98a1742f135b94031e0925441508121e44a13e/portfolio_sort_grid.parquet"
-)
-grid_path &lt;- download_cached(grid_url, "grid.parquet")
+sv_info &lt;- read_parquet(download_cached(
+  paste0(grid_url, "sorting_variables.parquet"),
+  "sorting_variables.parquet"
+))
 
-grid &lt;- read_parquet(grid_path)
+sv_choices &lt;- setNames(
+  sv_info$sorting_variable,
+  paste0(sv_info$sorting_variable, " (", sv_info$full_name, ")")
+)
+
+# The full grid is too large for the browser, so the app loads the slice of
+# the grid for a sorting variable when it is first selected
+load_grid_slice &lt;- function(sorting_variable) {
+  read_parquet(download_cached(
+    paste0(grid_url, "portfolio_sort_grid/", sorting_variable, ".parquet"),
+    paste0("grid_", sorting_variable, ".parquet")
+  ))
+}
+
+# The returns are cut into files of 1,000 consecutive ids named after the
+# range they cover, so the file that holds a series follows from its id
+returns_file &lt;- function(id) {
+  id_first &lt;- (id - 1) %/% 1000 * 1000 + 1
+  sprintf("id_%07d-%07d.parquet", id_first, id_first + 999)
+}
+
+# Months without a valid long-short return are stored as 0. Before a signal
+# starts and after it ends, they would only draw flat lines.
+trim_zero_months &lt;- function(dat) {
+  valid &lt;- which(dat$ret != 0)
+  if (length(valid) == 0) {
+    return(dat[0, ])
+  }
+  dat[min(valid):max(valid), ]
+}
+
+no_returns_message &lt;- paste(
+  "The factor library stores no returns for this specification:",
+  "its portfolio sort produced no portfolios."
+)
 
 tf_colors &lt;- c("#3B9AB2FF", "#78B7C5FF", "#EBCC2AFF", "#E1AF00FF", "#F21A00FF")
 tf_primary &lt;- tf_colors[1]
@@ -490,14 +367,19 @@ ui &lt;- fluidPage(
         "sorting_variable",
         "Sorting variable",
         choices = sv_choices,
-        selected = sv_choices[["bm (Book-to-Market)"]],
+        selected = "bm",
         options = list(placeholder = "Type to search...")
       ),
       uiOutput("sv_detail"),
       radioButtons(
         "sorting_variable_lag",
         "Lag",
-        c("3 months" = "3m", "6 months" = "6m", "Fama-French style" = "ff"),
+        c(
+          "1 month (OSAP timing)" = "1m",
+          "3 months" = "3m",
+          "6 months" = "6m",
+          "Fama-French style" = "ff"
+        ),
         selected = "3m"
       ),
       radioButtons(
@@ -600,6 +482,10 @@ ui &lt;- fluidPage(
           )
         )
       ),
+      helpText(
+        "All series require a listing age of at least 24 months and apply no",
+        "minimum stock price and no negative book equity screen."
+      ),
 
       tags$hr(class = "section-divider"),
 
@@ -615,6 +501,11 @@ ui &lt;- fluidPage(
       width = 8,
       plotOutput("plot"),
       tableOutput("summary_table"),
+      helpText(
+        "Months without a valid long-short return are stored as 0. The plot",
+        "leaves them out before the first and after the last valid month, and",
+        "the statistics leave them out altogether."
+      ),
       h4("Download programmatically"),
       p(
         "You can download this portfolio return series programmatically",
@@ -683,10 +574,16 @@ server &lt;- function(input, output, session) {
     )
   })
 
-  matched_id &lt;- reactive({
-    res &lt;- grid %&gt;%
+  sv_grid &lt;- reactive({
+    req(input$sorting_variable)
+    withProgress(message = "Fetching specifications...", {
+      load_grid_slice(input$sorting_variable)
+    })
+  })
+
+  matched_spec &lt;- reactive({
+    res &lt;- sv_grid() %&gt;%
       filter(
-        sorting_variable == input$sorting_variable,
         sorting_variable_lag == input$sorting_variable_lag,
         rebalancing == input$rebalancing,
         n_portfolios_main == as.numeric(input$n_portfolios_main),
@@ -695,7 +592,12 @@ server &lt;- function(input, output, session) {
         weighting_scheme == input$weighting_scheme,
         exclude_financials == input$exclude_financials,
         exclude_utilities == input$exclude_utilities,
-        exclude_negative_earnings == input$exclude_negative_earnings
+        exclude_negative_earnings == input$exclude_negative_earnings,
+        # The library holds these choices fixed, so they get no inputs;
+        # filtering on them keeps the match unique should that change
+        is.na(min_stock_price),
+        min_listing_age == 24,
+        !exclude_negative_book_equity
       )
 
     if (input$min_size_quantile == "NA") {
@@ -715,93 +617,84 @@ server &lt;- function(input, output, session) {
         )
     }
 
-    if (input$sorting_method != "univariate") {
+    if (input$sorting_method == "univariate") {
+      res &lt;- res %&gt;% filter(is.na(n_portfolios_secondary))
+    } else {
       res &lt;- res %&gt;%
         filter(
           n_portfolios_secondary == as.numeric(input$n_portfolios_secondary)
         )
     }
 
-    res %&gt;%
-      head(1) %&gt;%
-      pull(id)
+    head(res, 1)
   })
 
+  matched_id &lt;- reactive(matched_spec()$id)
+
   factor_data &lt;- reactive({
-    req(length(matched_id()) &gt; 0)
-
-    sv &lt;- input$sorting_variable
-    lag &lt;- input$sorting_variable_lag
-    method &lt;- input$sorting_method
-    bp_main &lt;- input$n_portfolios_main
-    cache_file &lt;- paste0(sv, "_", lag, "_", method, "_", bp_main, ".parquet")
-
-    url &lt;- sprintf(
-      "https://huggingface.co/datasets/tidy-finance/factor-library/resolve/42ca61426e06c8460dba39fcfe8431575134f2a9/sorting_variable=%s/sorting_variable_lag=%s/sorting_method=%s/n_portfolios_main=%s/part-0.parquet",
-      sv,
-      lag,
-      method,
-      bp_main
-    )
+    validate(need(
+      nrow(matched_spec()) &gt; 0,
+      if (input$sorting_method %in% sv_grid()$sorting_method) {
+        "The factor library holds no series for this combination of choices."
+      } else {
+        paste(
+          "This sorting variable is only available with univariate sorts,",
+          "because the bivariate sorts use size as their second variable."
+        )
+      }
+    ))
 
     target_id &lt;- matched_id()
+    file &lt;- returns_file(target_id)
 
-    withProgress(message = "Fetching data...", {
-      path &lt;- download_cached(url, cache_file)
-      dat &lt;- read_parquet(path)
-      dat %&gt;%
-        filter(id == target_id) %&gt;%
-        arrange(date, ret_type)
+    dat &lt;- withProgress(message = "Fetching returns...", {
+      tryCatch(
+        read_parquet(download_cached(paste0(returns_url, file), file)),
+        error = function(e) e
+      )
     })
+
+    # The file of an id range is missing when none of its series has returns.
+    # webR reports a failed download without the HTTP status, so a missing
+    # file cannot be told apart from a network error.
+    if (inherits(dat, "error")) {
+      validate(paste0(
+        "Could not download the returns for this specification (", file,
+        "). The factor library stores no such file when none of its 1,000 ",
+        "series has returns, because their portfolio sorts produced no ",
+        "portfolios."
+      ))
+    }
+
+    dat &lt;- dat %&gt;%
+      filter(id == target_id) %&gt;%
+      arrange(date)
+
+    validate(need(nrow(dat) &gt; 0, no_returns_message))
+    dat
+  })
+
+  # Like download_data(), the downloads carry the construction choices of the
+  # series next to its returns
+  series_with_spec &lt;- reactive({
+    inner_join(factor_data(), matched_spec(), by = "id")
   })
 
   # Build the argument values shared by both code snippets. `sep` controls the
-  # spacing around the assignment (" = " in R, "=" in Python) and `null_value`
-  # / the boolean labels differ between the two languages.
-  build_args &lt;- function(sep, null_value, bool_labels) {
-    sv &lt;- input$sorting_variable
+  # spacing around the assignment (" = " in R, "=" in Python) and the boolean
+  # labels differ between the two languages. `na_value` selects the missing
+  # level of a screen: NA in R, and [None] in Python, where None would drop
+  # the filter instead.
+  build_args &lt;- function(sep, na_value, bool_labels) {
+    na_or_value &lt;- function(value) if (value == "NA") na_value else value
+    bool &lt;- function(value) bool_labels[[as.character(value)]]
 
     args &lt;- c(
-      sprintf('sorting_variable%s"%s"', sep, sv),
+      sprintf('sorting_variable%s"%s"', sep, input$sorting_variable),
       sprintf('sorting_variable_lag%s"%s"', sep, input$sorting_variable_lag),
       sprintf('rebalancing%s"%s"', sep, input$rebalancing),
       sprintf('n_portfolios_main%s%s', sep, input$n_portfolios_main),
-      sprintf('sorting_method%s"%s"', sep, input$sorting_method),
-      sprintf('breakpoints_exchanges%s"%s"', sep, input$breakpoints_exchanges),
-      sprintf('weighting_scheme%s"%s"', sep, input$weighting_scheme),
-      sprintf(
-        'breakpoints_min_size_threshold%s%s',
-        sep,
-        ifelse(
-          input$breakpoints_min_size == "NA",
-          null_value,
-          input$breakpoints_min_size
-        )
-      ),
-      sprintf(
-        'min_size_quantile%s%s',
-        sep,
-        ifelse(
-          input$min_size_quantile == "NA",
-          null_value,
-          input$min_size_quantile
-        )
-      ),
-      sprintf(
-        'exclude_financials%s%s',
-        sep,
-        bool_labels[[as.character(input$exclude_financials)]]
-      ),
-      sprintf(
-        'exclude_utilities%s%s',
-        sep,
-        bool_labels[[as.character(input$exclude_utilities)]]
-      ),
-      sprintf(
-        'exclude_negative_earnings%s%s',
-        sep,
-        bool_labels[[as.character(input$exclude_negative_earnings)]]
-      )
+      sprintf('sorting_method%s"%s"', sep, input$sorting_method)
     )
 
     if (input$sorting_method != "univariate") {
@@ -811,17 +704,40 @@ server &lt;- function(input, output, session) {
       )
     }
 
-    args
+    c(
+      args,
+      sprintf('breakpoints_exchanges%s"%s"', sep, input$breakpoints_exchanges),
+      sprintf('weighting_scheme%s"%s"', sep, input$weighting_scheme),
+      sprintf(
+        'breakpoints_min_size_threshold%s%s',
+        sep,
+        na_or_value(input$breakpoints_min_size)
+      ),
+      sprintf(
+        'min_size_quantile%s%s',
+        sep,
+        na_or_value(input$min_size_quantile)
+      ),
+      sprintf('exclude_financials%s%s', sep, bool(input$exclude_financials)),
+      sprintf('exclude_utilities%s%s', sep, bool(input$exclude_utilities)),
+      sprintf(
+        'exclude_negative_earnings%s%s',
+        sep,
+        bool(input$exclude_negative_earnings)
+      )
+    )
   }
 
   output$code_snippet_r &lt;- renderUI({
     args &lt;- build_args(
       sep = " = ",
-      null_value = "NULL",
+      na_value = "NA",
       bool_labels = list("TRUE" = "TRUE", "FALSE" = "FALSE")
     )
 
     code &lt;- paste0(
+      "# Until the next CRAN release, install tidyfinance from GitHub:\n",
+      '# pak::pak("tidy-finance/r-tidyfinance")\n',
       "library(tidyfinance)\n\n",
       "download_data(\n",
       '  "Tidy Finance", "factor_library",\n',
@@ -842,11 +758,13 @@ server &lt;- function(input, output, session) {
   output$code_snippet_py &lt;- renderUI({
     args &lt;- build_args(
       sep = "=",
-      null_value = "None",
+      na_value = "[None]",
       bool_labels = list("TRUE" = "True", "FALSE" = "False")
     )
 
     code &lt;- paste0(
+      "# tidyfinance 0.5.1 on PyPI cannot read the current layout of the\n",
+      "# factor library yet; a release that can is in preparation.\n",
       "import tidyfinance as tf\n\n",
       "tf.download_data(\n",
       '  "Tidy Finance", "factor_library",\n',
@@ -871,19 +789,14 @@ server &lt;- function(input, output, session) {
   })
 
   output$plot &lt;- renderPlot({
-    req(nrow(factor_data()) &gt; 0)
+    dat &lt;- trim_zero_months(factor_data())
+    validate(need(
+      nrow(dat) &gt; 0,
+      "This series has no month with a valid long-short return."
+    ))
 
-    dat &lt;- factor_data()
     dat$date &lt;- as.Date(dat$date)
-
-    selected_type &lt;- c("EW" = "ew", "VW" = "vw", "capped VW" = "vw_capped")[[
-      input$weighting_scheme
-    ]]
-
-    dat &lt;- dat %&gt;%
-      filter(ret_type == selected_type) %&gt;%
-      arrange(date) %&gt;%
-      mutate(cumret = cumprod(1 + ret) - 1)
+    dat &lt;- dat %&gt;% mutate(cumret = cumprod(1 + ret) - 1)
 
     plot(
       dat$date,
@@ -903,27 +816,25 @@ server &lt;- function(input, output, session) {
 
   output$summary_table &lt;- renderTable(
     {
-      req(nrow(factor_data()) &gt; 0)
-      factor_data() %&gt;%
-        mutate(
-          Weighting = c(
-            ew = "Equal-weighted",
-            vw = "Value-weighted",
-            vw_capped = "Capped VW"
-          )[ret_type]
-        ) %&gt;%
-        group_by(Weighting) %&gt;%
-        summarise(
-          `Start date` = as.character(min(date)),
-          `End date` = as.character(max(date)),
-          Observations = n(),
-          `Mean return` = sprintf("%.2f%%", mean(ret) * 100),
-          `Std. dev.` = sprintf("%.2f%%", sd(ret) * 100),
-          `Sharpe ratio` = sprintf("%.2f", mean(ret) / sd(ret) * sqrt(12)),
-          Minimum = sprintf("%.2f%%", min(ret) * 100),
-          Maximum = sprintf("%.2f%%", max(ret) * 100),
-          .groups = "drop"
-        )
+      dat &lt;- factor_data() %&gt;% filter(ret != 0)
+      req(nrow(dat) &gt; 0)
+      # poorman's summarise() cannot see matched_id(), so the one-row table is
+      # built directly
+      data.frame(
+        `Series id` = as.character(matched_id()),
+        `Start date` = as.character(min(dat$date)),
+        `End date` = as.character(max(dat$date)),
+        Observations = nrow(dat),
+        `Mean return` = sprintf("%.2f%%", mean(dat$ret) * 100),
+        `Std. dev.` = sprintf("%.2f%%", sd(dat$ret) * 100),
+        `Sharpe ratio` = sprintf(
+          "%.2f",
+          mean(dat$ret) / sd(dat$ret) * sqrt(12)
+        ),
+        Minimum = sprintf("%.2f%%", min(dat$ret) * 100),
+        Maximum = sprintf("%.2f%%", max(dat$ret) * 100),
+        check.names = FALSE
+      )
     },
     striped = TRUE,
     hover = TRUE,
@@ -933,7 +844,7 @@ server &lt;- function(input, output, session) {
   observeEvent(input$download_csv, {
     req(nrow(factor_data()) &gt; 0)
     tmp &lt;- tempfile(fileext = ".csv")
-    write.csv(factor_data(), tmp, row.names = FALSE)
+    write.csv(series_with_spec(), tmp, row.names = FALSE)
     b64 &lt;- base64enc::base64encode(tmp)
     fname &lt;- sprintf("factor_id_%s.csv", matched_id())
     session$sendCustomMessage(
@@ -949,7 +860,7 @@ server &lt;- function(input, output, session) {
   observeEvent(input$download_parquet, {
     req(nrow(factor_data()) &gt; 0)
     tmp &lt;- tempfile(fileext = ".parquet")
-    write_parquet(factor_data(), tmp)
+    write_parquet(series_with_spec(), tmp)
     b64 &lt;- base64enc::base64encode(tmp)
     fname &lt;- sprintf("factor_id_%s.parquet", matched_id())
     session$sendCustomMessage(
@@ -971,9 +882,13 @@ shinyApp(ui, server)</code></pre>
 
 </main> <!-- /main -->
 <div class="custom-footer">
+
     <div class="copyright">© Christoph Frey, Christoph Scheuch, Stefan Voigt &amp; Patrick Weiss</div>
+
     <a href="https://www.tidy-finance.org/disclaimer.html">Disclaimer</a>
+
     <a href="#" id="open_preferences_center">Cookie Preferences</a>
+
 </div>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
